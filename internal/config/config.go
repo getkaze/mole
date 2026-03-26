@@ -103,10 +103,10 @@ func (c *Config) applyDefaults() {
 		c.Log.Level = "info"
 	}
 	if c.LLM.ReviewModel == "" {
-		c.LLM.ReviewModel = "claude-sonnet-4-20250514"
+		c.LLM.ReviewModel = "claude-sonnet-4-6"
 	}
 	if c.LLM.DeepReviewModel == "" {
-		c.LLM.DeepReviewModel = "claude-opus-4-20250514"
+		c.LLM.DeepReviewModel = "claude-opus-4-6"
 	}
 }
 

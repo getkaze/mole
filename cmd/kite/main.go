@@ -96,7 +96,12 @@ func serveCmd() *cobra.Command {
 				}
 			}()
 
-			slog.Info("kite is running", "port", cfg.Server.Port, "workers", cfg.Worker.Count)
+			slog.Info("kite is running",
+				"port", cfg.Server.Port,
+				"workers", cfg.Worker.Count,
+				"review_model", cfg.LLM.ReviewModel,
+				"deep_review_model", cfg.LLM.DeepReviewModel,
+			)
 
 			<-ctx.Done()
 

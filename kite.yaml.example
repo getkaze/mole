@@ -12,8 +12,8 @@ llm:
   # Your Anthropic API key
   api_key: "sk-ant-..."
   # Models (defaults shown)
-  review_model: "claude-sonnet-4-20250514"
-  deep_review_model: "claude-opus-4-20250514"
+  review_model: "claude-sonnet-4-6"
+  deep_review_model: "claude-opus-4-6"
 
 mysql:
   host: localhost

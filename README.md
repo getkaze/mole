@@ -170,8 +170,8 @@ github:
 
 llm:
   api_key: "sk-ant-..."                  # Anthropic API key
-  review_model: "claude-sonnet-4-20250514"      # Standard review model
-  deep_review_model: "claude-opus-4-20250514"   # Deep review model
+  review_model: "claude-sonnet-4-6"              # Standard review model
+  deep_review_model: "claude-opus-4-6"           # Deep review model
 
 mysql:
   host: localhost                        # MySQL host

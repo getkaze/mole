@@ -7,10 +7,10 @@ func TestMaxTokensForModel(t *testing.T) {
 		model string
 		want  int64
 	}{
-		{"claude-opus-4-20250514", 32000},
-		{"claude-sonnet-4-20250514", 16000},
-		{"anything-else", 16000},
-		{"", 16000},
+		{"claude-opus-4-6", 128000},
+		{"claude-sonnet-4-6", 128000},
+		{"anything-else", 128000},
+		{"", 128000},
 	}
 	for _, tt := range tests {
 		if got := maxTokensForModel(tt.model); got != tt.want {

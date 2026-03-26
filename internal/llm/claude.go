@@ -67,9 +67,9 @@ func (c *Claude) Review(ctx context.Context, req ReviewRequest) (*ReviewResponse
 func maxTokensForModel(model string) int64 {
 	switch {
 	case contains(model, "opus"):
-		return 32000
+		return 128000
 	default:
-		return 16000
+		return 128000
 	}
 }
 
