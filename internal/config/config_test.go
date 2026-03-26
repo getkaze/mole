@@ -123,7 +123,7 @@ func TestLoad_EnvOverride(t *testing.T) {
 
 func TestMySQLConfig_DSN(t *testing.T) {
 	c := MySQLConfig{Host: "db", Port: 3306, Database: "kite", User: "root", Password: "pass"}
-	want := "root:pass@tcp(db:3306)/kite?parseTime=true"
+	want := "root:pass@tcp(db:3306)/kite?parseTime=true&multiStatements=true"
 	if got := c.DSN(); got != want {
 		t.Errorf("DSN() = %q, want %q", got, want)
 	}

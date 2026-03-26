@@ -16,7 +16,7 @@ func TestFormat_BasicReview(t *testing.T) {
 		Suggestions: []string{"Add tests"},
 	}
 
-	result := Format(resp, "", "en")
+	result := Format(resp, "en")
 
 	if !strings.Contains(result.Body, "Kite Review") {
 		t.Error("body should contain header")
@@ -46,17 +46,9 @@ func TestFormat_NoComments(t *testing.T) {
 		Summary:  "Clean code.",
 		Comments: nil,
 	}
-	result := Format(resp, "", "en")
+	result := Format(resp, "en")
 	if !strings.Contains(result.Body, "No issues found") {
 		t.Error("should show 'No issues found' when no comments")
-	}
-}
-
-func TestFormat_WithSplitNote(t *testing.T) {
-	resp := &llm.ReviewResponse{Summary: "ok"}
-	result := Format(resp, "Reviewed in 3 groups due to PR size.", "en")
-	if !strings.Contains(result.Body, "3 groups") {
-		t.Error("body should contain split note")
 	}
 }
 
@@ -70,7 +62,7 @@ func TestFormat_SeverityBadges(t *testing.T) {
 			{File: "d.go", Line: 4, Category: "style", Severity: "unknown", Message: "fallback"},
 		},
 	}
-	result := Format(resp, "", "en")
+	result := Format(resp, "en")
 
 	if len(result.Comments) != 4 {
 		t.Fatalf("got %d comments, want 4", len(result.Comments))
@@ -97,7 +89,7 @@ func TestFormat_ListLayout(t *testing.T) {
 			{File: "main.go", Line: 10, Category: "security", Severity: "must-fix", Message: "SQL injection"},
 		},
 	}
-	result := Format(resp, "", "en")
+	result := Format(resp, "en")
 
 	// Should use list format: "**1.** `file:line` — badge **label** · category"
 	if !strings.Contains(result.Body, "**1.** `main.go:10`") {
@@ -119,7 +111,7 @@ func TestFormat_PortugueseBR(t *testing.T) {
 			{File: "main.go", Line: 10, Category: "security", Severity: "must-fix", Message: "SQL injection"},
 		},
 	}
-	result := Format(resp, "", "pt-BR")
+	result := Format(resp, "pt-BR")
 
 	if !strings.Contains(result.Body, "Resumo") {
 		t.Error("body should contain Portuguese summary header")
@@ -137,7 +129,7 @@ func TestFormat_UnknownLangFallsBackToEnglish(t *testing.T) {
 		Summary:  "Clean.",
 		Comments: nil,
 	}
-	result := Format(resp, "", "fr-FR")
+	result := Format(resp, "fr-FR")
 	if !strings.Contains(result.Body, "No issues found") {
 		t.Error("unknown lang should fall back to English")
 	}

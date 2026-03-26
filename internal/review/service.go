@@ -111,44 +111,30 @@ func (s *Service) Execute(ctx context.Context, job queue.Job) error {
 		}
 	}
 
-	// Split if needed
-	contextTokens := EstimateTokens(ctxResult.Content)
-	groups := SplitDiffs(llmDiffs, contextTokens)
-
 	slog.Info("reviewing PR",
 		"repo", job.Repo,
 		"pr", job.PRNumber,
 		"type", job.Type,
 		"model", model,
 		"files", len(diffs),
-		"groups", len(groups),
 	)
 
-	// Review each group
-	var responses []*llm.ReviewResponse
-	for i, group := range groups {
-		slog.Debug("reviewing group", "group", i+1, "files", len(group.Files))
-
-		resp, err := s.provider.Review(ctx, llm.ReviewRequest{
-			Diff:    group.Files,
-			Context: ctxResult.Content,
-			Model:   model,
-		})
-		if err != nil {
-			s.saveReview(ctx, job, model, nil, err)
-			return fmt.Errorf("LLM review (group %d): %w", i+1, err)
-		}
-		responses = append(responses, resp)
+	// Review all files in a single call
+	result, err := s.provider.Review(ctx, llm.ReviewRequest{
+		Diff:    llmDiffs,
+		Context: ctxResult.Content,
+		Model:   model,
+	})
+	if err != nil {
+		s.saveReview(ctx, job, model, nil, err)
+		return fmt.Errorf("LLM review: %w", err)
 	}
-
-	// Aggregate
-	result := AggregateResponses(responses)
 
 	// Validate line numbers
 	result.Comments = ValidateComments(result.Comments, llmDiffs)
 
 	// Format
-	formatted := Format(result, SplitNote(len(groups), repoCfg.Language), repoCfg.Language)
+	formatted := Format(result, repoCfg.Language)
 
 	// Convert to GitHub review data
 	reviewData := &ghclient.ReviewData{

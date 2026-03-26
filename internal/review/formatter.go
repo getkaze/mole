@@ -39,16 +39,11 @@ type FormattedComment struct {
 	Body string
 }
 
-func Format(resp *llm.ReviewResponse, splitNote string, lang string) *FormattedReview {
+func Format(resp *llm.ReviewResponse, lang string) *FormattedReview {
 	msgs := i18n.Get(lang)
 	var body strings.Builder
 
 	body.WriteString(fmt.Sprintf("## %s\n\n", msgs.ReviewHeader))
-
-	if splitNote != "" {
-		fmt.Fprintf(&body, "> %s\n\n", splitNote)
-	}
-
 	body.WriteString(fmt.Sprintf("### %s\n\n", msgs.Summary))
 	body.WriteString(resp.Summary)
 	body.WriteString("\n\n")
