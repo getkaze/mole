@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48"
+     viewBox="0 0 24 24" fill="none"
+     stroke="#8b5cf6" stroke-width="1.5"
+     stroke-linecap="round" stroke-linejoin="round">
+  <!-- kite diamond shape -->
+  <path d="M12 2 L20 12 L12 16 L4 12 Z"/>
+  <!-- center cross spar -->
+  <line x1="12" y1="2"  x2="12" y2="16"/>
+  <line x1="4"  y1="12" x2="20" y2="12"/>
+  <!-- tail string -->
+  <path d="M12 16 Q10 19 12 20 Q14 21 12 22"/>
+</svg>

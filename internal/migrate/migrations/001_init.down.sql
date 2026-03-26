@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS ignored_prs;
+DROP TABLE IF EXISTS reviews;

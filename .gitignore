@@ -1,0 +1,15 @@
+/kite
+*.exe
+dist/
+.env
+kite.yaml
+
+# Helm
+.helm/
+agents/
+rules/
+schemas/
+.claude/
+helm.yaml
+CLAUDE.md
+TESTING.md

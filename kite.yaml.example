@@ -1,0 +1,38 @@
+# Kite — AI-powered PR reviewer
+# Copy this file to kite.yaml and fill in your values.
+# All values can be overridden with KITE_ prefixed env vars.
+
+github:
+  # Create a GitHub App: https://github.com/settings/apps/new
+  app_id: 12345
+  private_key_path: /etc/kite/github-app.pem
+  webhook_secret: "your-webhook-secret"
+
+llm:
+  # Your Anthropic API key
+  api_key: "sk-ant-..."
+  # Models (defaults shown)
+  review_model: "claude-sonnet-4-20250514"
+  deep_review_model: "claude-opus-4-20250514"
+
+mysql:
+  host: localhost
+  port: 3306
+  database: kite
+  user: kite
+  password: "your-password"
+
+valkey:
+  host: localhost
+  port: 6379
+
+server:
+  port: 8080
+
+worker:
+  # Number of concurrent review workers
+  count: 3
+
+log:
+  # debug | info | warn | error
+  level: info

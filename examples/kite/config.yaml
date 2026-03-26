@@ -1,0 +1,6 @@
+# .kite/config.yaml — Per-repository Kite configuration
+# Place this file at .kite/config.yaml in your repository root.
+
+# Language for review comments.
+# Supported: en (English, default), pt-BR (Portuguese)
+language: en
