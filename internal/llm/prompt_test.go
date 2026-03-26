@@ -64,6 +64,24 @@ func TestBuildPrompt_TooLargeFile(t *testing.T) {
 	}
 }
 
+func TestNumberDiffLines(t *testing.T) {
+	patch := "@@ -10,5 +20,8 @@\n+added line\n context line\n-deleted line\n+another added"
+	got := numberDiffLines(patch)
+	want := "@@ -10,5 +20,8 @@\n20: +added line\n21:  context line\n-deleted line\n22: +another added"
+	if got != want {
+		t.Errorf("numberDiffLines:\ngot:  %q\nwant: %q", got, want)
+	}
+}
+
+func TestNumberDiffLines_MultipleHunks(t *testing.T) {
+	patch := "@@ -1,2 +1,2 @@\n+first\n ctx\n@@ -50,2 +50,2 @@\n+second\n ctx"
+	got := numberDiffLines(patch)
+	want := "@@ -1,2 +1,2 @@\n1: +first\n2:  ctx\n@@ -50,2 +50,2 @@\n50: +second\n51:  ctx"
+	if got != want {
+		t.Errorf("numberDiffLines:\ngot:  %q\nwant: %q", got, want)
+	}
+}
+
 func TestBuildPrompt_EmptyPatch(t *testing.T) {
 	diffs := []FileDiff{
 		{Filename: "empty.go", Status: "modified", Patch: ""},
