@@ -48,6 +48,7 @@ func main() {
 		reviewCmd(),
 		initCmd(),
 		adminCmd(),
+		syncCmd(),
 	)
 
 	if err := root.Execute(); err != nil {
@@ -74,6 +75,14 @@ func serveCmd() *cobra.Command {
 			}
 			defer st.Close()
 
+			applied, err := migrate.Run(st.DB())
+			if err != nil {
+				return fmt.Errorf("auto-migrate: %w", err)
+			}
+			if applied > 0 {
+				slog.Info("auto-migrate", "applied", applied)
+			}
+
 			q, err := queue.New(cfg.Valkey.Addr())
 			if err != nil {
 				return fmt.Errorf("valkey: %w", err)
@@ -94,6 +103,7 @@ func serveCmd() *cobra.Command {
 					GitHubClientSecret: cfg.Dashboard.GitHubClientSecret,
 					SessionSecret:      cfg.Dashboard.SessionSecret,
 					BaseURL:            cfg.Dashboard.BaseURL,
+					Pricing:            cfg.LLM.Pricing,
 				})
 				if err != nil {
 					return fmt.Errorf("dashboard: %w", err)
@@ -241,6 +251,37 @@ func healthCmd() *cobra.Command {
 			}
 
 			fmt.Println("GitHub... OK (credentials loaded)")
+			return nil
+		},
+	}
+}
+
+func syncCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "sync",
+		Short: "Sync reactions from GitHub, recalculate scores, and update metrics",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cfg, err := config.Load(configPath)
+			if err != nil {
+				return err
+			}
+
+			setupLogging(cfg.Log.Level)
+
+			st, err := store.NewMySQL(cfg.MySQL.DSN())
+			if err != nil {
+				return fmt.Errorf("mysql: %w", err)
+			}
+			defer st.Close()
+
+			ghFactory := ghclient.NewClientFactory(cfg.GitHub.AppID, cfg.GitHub.PrivateKeyPath)
+			reactionSyncer := aggregator.NewReactionSyncer(st, ghFactory)
+			agg := aggregator.New(st, time.Hour, aggregator.WithReactionSyncer(reactionSyncer))
+
+			fmt.Println("Syncing reactions from GitHub...")
+			_, recalculated := agg.SyncOnce(context.Background())
+
+			fmt.Printf("Done. Recalculated %d review scores. Metrics updated.\n", recalculated)
 			return nil
 		},
 	}

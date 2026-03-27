@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/getkaze/mole/internal/score"
 	"github.com/getkaze/mole/internal/store"
 )
 
@@ -59,6 +60,56 @@ func (a *Aggregator) Run(ctx context.Context) {
 	}
 }
 
+// SyncOnce runs a single sync + recalculate + aggregate cycle.
+// Used by the `mole sync` CLI command.
+func (a *Aggregator) SyncOnce(ctx context.Context) (synced int, recalculated int) {
+	if a.reactionSyncer != nil {
+		a.reactionSyncer.Sync(ctx)
+	}
+
+	recalculated = a.RecalculateScores(ctx)
+	a.aggregate(ctx)
+	return
+}
+
+// RecalculateScores recalculates PR scores for reviews that have false_positive issues.
+func (a *Aggregator) RecalculateScores(ctx context.Context) int {
+	now := time.Now()
+	from := now.AddDate(0, 0, -30)
+
+	reviewIDs, err := a.store.GetReviewIDsWithFalsePositives(ctx, from, now)
+	if err != nil {
+		slog.Error("failed to get reviews with false positives", "error", err)
+		return 0
+	}
+
+	recalculated := 0
+	for _, reviewID := range reviewIDs {
+		severities, err := a.store.GetNonFalsePositiveSeverities(ctx, reviewID)
+		if err != nil {
+			slog.Error("failed to get severities for review", "review_id", reviewID, "error", err)
+			continue
+		}
+
+		comments := make([]score.Comment, len(severities))
+		for i, sev := range severities {
+			comments[i] = score.Comment{Severity: sev}
+		}
+		newScore := score.Calculate(comments)
+
+		if err := a.store.UpdateReviewScore(ctx, reviewID, newScore); err != nil {
+			slog.Error("failed to update review score", "review_id", reviewID, "error", err)
+			continue
+		}
+		recalculated++
+	}
+
+	if recalculated > 0 {
+		slog.Info("scores recalculated", "count", recalculated)
+	}
+	return recalculated
+}
+
 func (a *Aggregator) aggregate(ctx context.Context) {
 	// Sync reactions before aggregating metrics
 	if a.reactionSyncer != nil {
@@ -89,11 +140,14 @@ func (a *Aggregator) aggregateDevMetrics(ctx context.Context, periodType string,
 	}
 
 	for _, dev := range developers {
-		issues, err := a.store.GetIssuesByDeveloper(ctx, dev, from, to)
+		allIssues, err := a.store.GetIssuesByDeveloper(ctx, dev, from, to)
 		if err != nil {
 			slog.Error("failed to get issues for developer", "developer", dev, "error", err)
 			continue
 		}
+
+		// Filter out false positives from metrics
+		issues := filterConfirmed(allIssues)
 
 		byCat := countByField(issues, func(i store.Issue) string { return i.Category })
 		bySev := countByField(issues, func(i store.Issue) string { return i.Severity })
@@ -136,11 +190,14 @@ func (a *Aggregator) aggregateModuleMetrics(ctx context.Context, periodType stri
 	}
 
 	for _, mod := range modules {
-		issues, err := a.store.GetIssuesByModule(ctx, mod, from, to)
+		allIssues, err := a.store.GetIssuesByModule(ctx, mod, from, to)
 		if err != nil {
 			slog.Error("failed to get issues for module", "module", mod, "error", err)
 			continue
 		}
+
+		// Filter out false positives from metrics
+		issues := filterConfirmed(allIssues)
 
 		criticalCount := 0
 		for _, i := range issues {
@@ -178,6 +235,16 @@ func (a *Aggregator) getActiveDevelopers(ctx context.Context, from, to time.Time
 
 func (a *Aggregator) getActiveModules(ctx context.Context, from, to time.Time) ([]string, error) {
 	return a.store.ListActiveModules(ctx, from, to)
+}
+
+func filterConfirmed(issues []store.Issue) []store.Issue {
+	var out []store.Issue
+	for _, i := range issues {
+		if i.Validation != "false_positive" {
+			out = append(out, i)
+		}
+	}
+	return out
 }
 
 func countByField(issues []store.Issue, fn func(store.Issue) string) map[string]int {
