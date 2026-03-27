@@ -1,5 +1,5 @@
-/* Mole Dashboard — Kaze Design System v2
-   Aligned with Keel dashboard reference design
+/* Mole Dashboard — Design System
+   Warm earth palette derived from Mole mascot
    Recursive variable font | Dark & Light themes */
 
 /* Recursive Mono — static instances with MONO=1 baked in */
@@ -33,16 +33,16 @@
    ══════════════════════════════════════════ */
 
 :root {
-    --bg:       #0a0a0a;
-    --surface:  #111111;
-    --surface2: #161616;
-    --border:   #1e1e1e;
-    --border2:  #2a2a2a;
+    --bg:       #0c0b09;
+    --surface:  #13120f;
+    --surface2: #1a1814;
+    --border:   #211f1a;
+    --border2:  #2e2b24;
     --text:     #e8e8e8;
     --muted:    #666;
     --muted2:   #3a3a3a;
-    --accent:   #8b5cf6;
-    --accent-d: #6d3fd6;
+    --accent:   #c08a3e;
+    --accent-d: #a07030;
     --green:    #22c55e;
     --yellow:   #eab308;
     --red:      #ef4444;
@@ -58,7 +58,7 @@
     --red-bdr:     #3d1515;
     --yellow-bg:   #1a1300;
     --yellow-bdr:  #3d2e00;
-    --accent-bg:   #1a1030;
+    --accent-bg:   #1a1508;
 
     color-scheme: dark;
     font-synthesis: none;
@@ -74,8 +74,8 @@
     --text:     #171717;
     --muted:    #737373;
     --muted2:   #a3a3a3;
-    --accent:   #7c3aed;
-    --accent-d: #6d28d9;
+    --accent:   #966b28;
+    --accent-d: #7a5720;
     --green:    #16a34a;
     --yellow:   #ca8a04;
     --red:      #dc2626;
@@ -87,7 +87,7 @@
     --red-bdr:     #fecaca;
     --yellow-bg:   #fefce8;
     --yellow-bdr:  #fef08a;
-    --accent-bg:   #f5f3ff;
+    --accent-bg:   #fdf8f0;
 
     color-scheme: light;
 }
