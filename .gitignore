@@ -1,7 +1,9 @@
+/mole
 /kite
 *.exe
 dist/
 .env
+mole.yaml
 kite.yaml
 
 # Helm

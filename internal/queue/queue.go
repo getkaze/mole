@@ -10,9 +10,9 @@ import (
 )
 
 const (
-	jobsKey       = "kite:queue:jobs"
-	deadLetterKey = "kite:queue:deadletter"
-	dedupPrefix   = "kite:dedup:"
+	jobsKey       = "mole:queue:jobs"
+	deadLetterKey = "mole:queue:deadletter"
+	dedupPrefix   = "mole:dedup:"
 	dedupTTL      = 72 * time.Hour
 )
 

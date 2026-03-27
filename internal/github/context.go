@@ -16,12 +16,12 @@ type ContextResult struct {
 }
 
 func LoadContext(ctx context.Context, client *gh.Client, owner, repo, ref string) (*ContextResult, error) {
-	_, dirContent, resp, err := client.Repositories.GetContents(ctx, owner, repo, ".kite", &gh.RepositoryContentGetOptions{Ref: ref})
+	_, dirContent, resp, err := client.Repositories.GetContents(ctx, owner, repo, ".mole", &gh.RepositoryContentGetOptions{Ref: ref})
 	if err != nil {
 		if resp != nil && resp.StatusCode == 404 {
 			return &ContextResult{}, nil
 		}
-		return nil, fmt.Errorf("reading .kite directory: %w", err)
+		return nil, fmt.Errorf("reading .mole directory: %w", err)
 	}
 
 	var b strings.Builder

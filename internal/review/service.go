@@ -4,14 +4,17 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"path/filepath"
 	"strings"
 	"time"
 
-	ghclient "github.com/getkaze/kite/internal/github"
-	"github.com/getkaze/kite/internal/llm"
-	"github.com/getkaze/kite/internal/metrics"
-	"github.com/getkaze/kite/internal/queue"
-	"github.com/getkaze/kite/internal/store"
+	ghclient "github.com/getkaze/mole/internal/github"
+	"github.com/getkaze/mole/internal/llm"
+	"github.com/getkaze/mole/internal/metrics"
+	"github.com/getkaze/mole/internal/personality"
+	"github.com/getkaze/mole/internal/queue"
+	"github.com/getkaze/mole/internal/score"
+	"github.com/getkaze/mole/internal/store"
 )
 
 type Service struct {
@@ -67,11 +70,13 @@ func (s *Service) Execute(ctx context.Context, job queue.Job) error {
 	// Add 👀 reaction to signal review started
 	ghclient.AddReaction(ctx, gh, owner, repo, job.PRNumber, job.CommentID, "eyes")
 
-	// Get PR head SHA and base ref
-	headSHA, baseRef, err := ghclient.GetPRHead(ctx, gh, owner, repo, job.PRNumber)
+	// Get PR info (head SHA, base ref, author)
+	prInfo, err := ghclient.GetPRInfo(ctx, gh, owner, repo, job.PRNumber)
 	if err != nil {
-		return fmt.Errorf("getting PR head: %w", err)
+		return fmt.Errorf("getting PR info: %w", err)
 	}
+	headSHA := prInfo.HeadSHA
+	baseRef := prInfo.BaseRef
 
 	// Fetch diff
 	diffs, err := ghclient.FetchDiff(ctx, gh, owner, repo, job.PRNumber)
@@ -111,6 +116,14 @@ func (s *Service) Execute(ctx context.Context, job queue.Job) error {
 		}
 	}
 
+	// Load previous issues for this PR to avoid duplicates
+	var previousIssues string
+	prevIssues, err := s.store.GetIssuesByPR(ctx, job.Repo, job.PRNumber)
+	if err == nil && len(prevIssues) > 0 {
+		previousIssues = formatPreviousIssues(prevIssues)
+		slog.Info("loaded previous issues", "repo", job.Repo, "pr", job.PRNumber, "count", len(prevIssues))
+	}
+
 	slog.Info("reviewing PR",
 		"repo", job.Repo,
 		"pr", job.PRNumber,
@@ -121,20 +134,35 @@ func (s *Service) Execute(ctx context.Context, job queue.Job) error {
 
 	// Review all files in a single call
 	result, err := s.provider.Review(ctx, llm.ReviewRequest{
-		Diff:    llmDiffs,
-		Context: ctxResult.Content,
-		Model:   model,
+		Diff:           llmDiffs,
+		Context:        ctxResult.Content,
+		Instructions:   repoCfg.Instructions,
+		PreviousIssues: previousIssues,
+		Model:          model,
 	})
 	if err != nil {
-		s.saveReview(ctx, job, model, nil, err)
+		s.saveReview(ctx, job, model, prInfo.Author, nil, nil, nil, err)
 		return fmt.Errorf("LLM review: %w", err)
 	}
 
 	// Validate line numbers
 	result.Comments = ValidateComments(result.Comments, llmDiffs)
 
+	// Apply filters from repo config
+	result.Comments = FilterComments(result.Comments, repoCfg.MinSeverity, repoCfg.Ignore, repoCfg.MaxInlineComments)
+
+	// Calculate score
+	scoreComments := make([]score.Comment, len(result.Comments))
+	for i, c := range result.Comments {
+		scoreComments[i] = score.Comment{Severity: c.Severity}
+	}
+	prScore := score.Calculate(scoreComments)
+
+	// Build personality engine from repo config
+	engine := personality.New(repoCfg.Personality, repoCfg.Language)
+
 	// Format
-	formatted := Format(result, repoCfg.Language)
+	formatted := Format(result, engine, prScore)
 
 	// Convert to GitHub review data
 	reviewData := &ghclient.ReviewData{
@@ -149,16 +177,17 @@ func (s *Service) Execute(ctx context.Context, job queue.Job) error {
 	}
 
 	// Post to GitHub
-	if err := ghclient.PostReview(ctx, gh, owner, repo, job.PRNumber, headSHA, reviewData); err != nil {
-		s.saveReview(ctx, job, model, result, err)
+	postResult, err := ghclient.PostReview(ctx, gh, owner, repo, job.PRNumber, headSHA, reviewData)
+	if err != nil {
+		s.saveReview(ctx, job, model, prInfo.Author, &prScore, result, nil, err)
 		return fmt.Errorf("posting review: %w", err)
 	}
 
 	// Add ✅ reaction to signal review complete
 	ghclient.AddReaction(ctx, gh, owner, repo, job.PRNumber, job.CommentID, "rocket")
 
-	// Save review record
-	s.saveReview(ctx, job, model, result, nil)
+	// Save review record and persist issues (with GitHub comment IDs)
+	s.saveReview(ctx, job, model, prInfo.Author, &prScore, result, postResult, nil)
 
 	elapsed := time.Since(start)
 	metrics.ReviewDuration.WithLabelValues(job.Type).Observe(elapsed.Seconds())
@@ -177,13 +206,19 @@ func (s *Service) Execute(ctx context.Context, job queue.Job) error {
 	return nil
 }
 
-func (s *Service) saveReview(ctx context.Context, job queue.Job, model string, result *llm.ReviewResponse, reviewErr error) {
+func (s *Service) saveReview(ctx context.Context, job queue.Job, model string, prAuthor string, prScore *int, result *llm.ReviewResponse, postResult *ghclient.PostReviewResult, reviewErr error) {
 	r := &store.Review{
 		Repo:       job.Repo,
 		PRNumber:   job.PRNumber,
+		PRAuthor:   prAuthor,
 		ReviewType: job.Type,
 		Model:      model,
+		Score:      prScore,
 		Status:     "success",
+	}
+
+	if job.InstallID != 0 {
+		r.InstallationID = &job.InstallID
 	}
 
 	if result != nil {
@@ -197,8 +232,40 @@ func (s *Service) saveReview(ctx context.Context, job queue.Job, model string, r
 		r.ErrorMessage = reviewErr.Error()
 	}
 
-	if err := s.store.SaveReview(ctx, r); err != nil {
+	reviewID, err := s.store.SaveReview(ctx, r)
+	if err != nil {
 		slog.Error("failed to save review record", "error", err)
+	}
+
+	// Persist issues and link GitHub comment IDs
+	if result != nil && reviewID > 0 && len(result.Comments) > 0 {
+		issues := make([]store.Issue, len(result.Comments))
+		for i, c := range result.Comments {
+			issues[i] = store.Issue{
+				ReviewID:    reviewID,
+				PRAuthor:    prAuthor,
+				Category:    c.Category,
+				Subcategory: c.Subcategory,
+				Severity:    c.Severity,
+				FilePath:    c.File,
+				LineNumber:  c.Line,
+				Description: c.Message,
+				ModuleName:  extractModule(c.File),
+			}
+		}
+		issueIDs, err := s.store.SaveIssues(ctx, reviewID, issues)
+		if err != nil {
+			slog.Error("failed to save issues", "error", err)
+		}
+
+		// Link GitHub comment IDs to issues for reaction tracking
+		if postResult != nil && len(postResult.CommentIDs) > 0 && len(issueIDs) > 0 {
+			for i, issueID := range issueIDs {
+				if i < len(postResult.CommentIDs) {
+					s.store.UpdateIssueCommentID(ctx, issueID, postResult.CommentIDs[i])
+				}
+			}
+		}
 	}
 
 	metrics.ReviewsTotal.WithLabelValues(r.ReviewType, r.Status).Inc()
@@ -206,4 +273,27 @@ func (s *Service) saveReview(ctx context.Context, job queue.Job, model string, r
 		metrics.TokensUsed.WithLabelValues(model, "input").Add(float64(result.Usage.InputTokens))
 		metrics.TokensUsed.WithLabelValues(model, "output").Add(float64(result.Usage.OutputTokens))
 	}
+}
+
+// formatPreviousIssues builds a text summary of previously reported issues for this PR.
+func formatPreviousIssues(issues []store.Issue) string {
+	var b strings.Builder
+	for i, issue := range issues {
+		fmt.Fprintf(&b, "%d. [%s] %s / %s — %s:%d — %s\n",
+			i+1, issue.Severity, issue.Category, issue.Subcategory,
+			issue.FilePath, issue.LineNumber, issue.Description)
+	}
+	return b.String()
+}
+
+// extractModule derives a module name from a file path.
+// e.g. "infra/mysql/helpers.go" → "infra/mysql"
+// e.g. "taxiStatus/service.go" → "taxiStatus"
+// e.g. "main.go" → "" (root level, no module)
+func extractModule(filePath string) string {
+	dir := filepath.Dir(filePath)
+	if dir == "." || dir == "" {
+		return ""
+	}
+	return dir
 }

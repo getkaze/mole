@@ -3,8 +3,27 @@ package llm
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 )
+
+// rawComment mirrors InlineComment but with line as json.RawMessage
+// to handle LLMs returning either int (42) or string ("42").
+type rawComment struct {
+	File        string          `json:"file"`
+	Line        json.RawMessage `json:"line"`
+	Category    string          `json:"category"`
+	Subcategory string          `json:"subcategory"`
+	Severity    string          `json:"severity"`
+	Message     string          `json:"message"`
+}
+
+type rawResponse struct {
+	Summary     string       `json:"summary"`
+	Comments    []rawComment `json:"comments"`
+	Suggestions []string     `json:"suggestions"`
+	Diagrams    []string     `json:"diagrams"`
+}
 
 func ParseResponse(raw string) (*ReviewResponse, error) {
 	raw = strings.TrimSpace(raw)
@@ -18,9 +37,27 @@ func ParseResponse(raw string) (*ReviewResponse, error) {
 		}
 	}
 
-	var resp ReviewResponse
-	if err := json.Unmarshal([]byte(raw), &resp); err != nil {
+	var rr rawResponse
+	if err := json.Unmarshal([]byte(raw), &rr); err != nil {
 		return nil, fmt.Errorf("parsing LLM response as JSON: %w\nraw response: %.500s", err, raw)
+	}
+
+	resp := &ReviewResponse{
+		Summary:     rr.Summary,
+		Suggestions: rr.Suggestions,
+		Diagrams:    rr.Diagrams,
+	}
+
+	for _, rc := range rr.Comments {
+		line := parseLine(rc.Line)
+		resp.Comments = append(resp.Comments, InlineComment{
+			File:        rc.File,
+			Line:        line,
+			Category:    rc.Category,
+			Subcategory: rc.Subcategory,
+			Severity:    rc.Severity,
+			Message:     rc.Message,
+		})
 	}
 
 	if resp.Comments == nil {
@@ -33,5 +70,28 @@ func ParseResponse(raw string) (*ReviewResponse, error) {
 		resp.Diagrams = []string{}
 	}
 
-	return &resp, nil
+	return resp, nil
+}
+
+// parseLine handles line as int (42), string ("42"), or missing/null (0).
+func parseLine(data json.RawMessage) int {
+	if len(data) == 0 {
+		return 0
+	}
+
+	// Try int
+	var n int
+	if err := json.Unmarshal(data, &n); err == nil {
+		return n
+	}
+
+	// Try string
+	var s string
+	if err := json.Unmarshal(data, &s); err == nil {
+		if n, err := strconv.Atoi(s); err == nil {
+			return n
+		}
+	}
+
+	return 0
 }

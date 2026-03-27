@@ -18,7 +18,13 @@ type ReviewData struct {
 	Comments []ReviewComment
 }
 
-func PostReview(ctx context.Context, client *gh.Client, owner, repo string, prNumber int, commitSHA string, data *ReviewData) error {
+// PostReviewResult contains the GitHub comment IDs for each inline comment.
+type PostReviewResult struct {
+	ReviewID   int64
+	CommentIDs []int64 // one per inline comment, in order
+}
+
+func PostReview(ctx context.Context, client *gh.Client, owner, repo string, prNumber int, commitSHA string, data *ReviewData) (*PostReviewResult, error) {
 	comments := make([]*gh.DraftReviewComment, 0, len(data.Comments))
 	for _, c := range data.Comments {
 		line := c.Line
@@ -37,18 +43,52 @@ func PostReview(ctx context.Context, client *gh.Client, owner, repo string, prNu
 		Comments: comments,
 	}
 
-	_, _, err := client.PullRequests.CreateReview(ctx, owner, repo, prNumber, reviewReq)
+	review, _, err := client.PullRequests.CreateReview(ctx, owner, repo, prNumber, reviewReq)
 	if err != nil {
-		return fmt.Errorf("posting review: %w", err)
+		return nil, fmt.Errorf("posting review: %w", err)
 	}
 
-	return nil
+	result := &PostReviewResult{
+		ReviewID: review.GetID(),
+	}
+
+	// Fetch the review's comments to get their IDs
+	if len(data.Comments) > 0 {
+		reviewComments, _, err := client.PullRequests.ListReviewComments(ctx, owner, repo, prNumber, review.GetID(), nil)
+		if err == nil {
+			for _, rc := range reviewComments {
+				result.CommentIDs = append(result.CommentIDs, rc.GetID())
+			}
+		}
+	}
+
+	return result, nil
 }
 
-func GetPRHead(ctx context.Context, client *gh.Client, owner, repo string, prNumber int) (sha string, base string, err error) {
+// PRInfo holds metadata about a pull request.
+type PRInfo struct {
+	HeadSHA string
+	BaseRef string
+	Author  string
+}
+
+func GetPRInfo(ctx context.Context, client *gh.Client, owner, repo string, prNumber int) (*PRInfo, error) {
 	pr, _, err := client.PullRequests.Get(ctx, owner, repo, prNumber)
 	if err != nil {
-		return "", "", fmt.Errorf("getting PR: %w", err)
+		return nil, fmt.Errorf("getting PR: %w", err)
 	}
-	return pr.GetHead().GetSHA(), pr.GetBase().GetRef(), nil
+	return &PRInfo{
+		HeadSHA: pr.GetHead().GetSHA(),
+		BaseRef: pr.GetBase().GetRef(),
+		Author:  pr.GetUser().GetLogin(),
+	}, nil
+}
+
+// GetPRHead is a compatibility wrapper around GetPRInfo.
+func GetPRHead(ctx context.Context, client *gh.Client, owner, repo string, prNumber int) (sha string, base string, err error) {
+	info, err := GetPRInfo(ctx, client, owner, repo, prNumber)
+	if err != nil {
+		return "", "", err
+	}
+	return info.HeadSHA, info.BaseRef, nil
 }

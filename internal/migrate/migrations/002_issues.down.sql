@@ -1,0 +1,5 @@
+DROP TABLE IF EXISTS issues;
+
+ALTER TABLE reviews DROP COLUMN IF EXISTS score;
+ALTER TABLE reviews DROP COLUMN IF EXISTS pr_author;
+ALTER TABLE reviews DROP COLUMN IF EXISTS installation_id;

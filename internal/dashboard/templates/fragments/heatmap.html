@@ -1,0 +1,24 @@
+{{if .Categories}}
+<table class="heatmap">
+    <thead>
+        <tr>
+            <th>Category</th>
+            <th>Count</th>
+            <th>Distribution</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{range .Categories}}
+        <tr>
+            <td>{{.Name}}</td>
+            <td>{{.Count}}</td>
+            <td>
+                <div class="bar" style="width: {{.Percent}}%"></div>
+            </td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
+{{else}}
+<p>No issues found in this period.</p>
+{{end}}

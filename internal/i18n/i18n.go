@@ -22,7 +22,7 @@ type Messages struct {
 
 var translations = map[string]Messages{
 	LangEN: {
-		ReviewHeader:  "Kite Review",
+		ReviewHeader:  "Mole Review",
 		Summary:       "Summary",
 		IssuesFound:   "Issues Found",
 		Suggestions:   "Suggestions",
@@ -36,7 +36,7 @@ var translations = map[string]Messages{
 		DiagramHeader: "Diagram",
 	},
 	LangPT: {
-		ReviewHeader:  "Kite Review",
+		ReviewHeader:  "Mole Review",
 		Summary:       "Resumo",
 		IssuesFound:   "Problemas Encontrados",
 		Suggestions:   "Sugestoes",

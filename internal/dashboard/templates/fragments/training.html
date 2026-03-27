@@ -1,0 +1,12 @@
+{{if .Topics}}
+<ul class="training-list">
+    {{range .Topics}}
+    <li>
+        <strong>{{.Category}} / {{.Subcategory}}</strong>
+        <span class="training-count">{{.Count}} occurrences in last 30 days</span>
+    </li>
+    {{end}}
+</ul>
+{{else}}
+<p>No recurring patterns detected yet.</p>
+{{end}}

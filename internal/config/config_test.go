@@ -16,7 +16,7 @@ llm:
   api_key: sk-test
 mysql:
   host: localhost
-  database: kite
+  database: mole
   user: root
 valkey:
   host: localhost
@@ -26,7 +26,7 @@ valkey:
 func writeConfig(t *testing.T, content string) string {
 	t.Helper()
 	dir := t.TempDir()
-	path := filepath.Join(dir, "kite.yaml")
+	path := filepath.Join(dir, "mole.yaml")
 	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
 		t.Fatal(err)
 	}
@@ -81,7 +81,7 @@ github:
 llm:
   api_key: sk-test
 mysql:
-  database: kite
+  database: mole
   user: root
 valkey:
   host: localhost
@@ -106,8 +106,8 @@ func TestLoad_FileNotFound(t *testing.T) {
 func TestLoad_EnvOverride(t *testing.T) {
 	path := writeConfig(t, validYAML())
 
-	t.Setenv("KITE_LLM_API_KEY", "sk-override")
-	t.Setenv("KITE_SERVER_PORT", "9090")
+	t.Setenv("MOLE_LLM_API_KEY", "sk-override")
+	t.Setenv("MOLE_SERVER_PORT", "9090")
 
 	cfg, err := Load(path)
 	if err != nil {
@@ -122,8 +122,8 @@ func TestLoad_EnvOverride(t *testing.T) {
 }
 
 func TestMySQLConfig_DSN(t *testing.T) {
-	c := MySQLConfig{Host: "db", Port: 3306, Database: "kite", User: "root", Password: "pass"}
-	want := "root:pass@tcp(db:3306)/kite?parseTime=true&multiStatements=true"
+	c := MySQLConfig{Host: "db", Port: 3306, Database: "mole", User: "root", Password: "pass"}
+	want := "root:pass@tcp(db:3306)/mole?parseTime=true&multiStatements=true"
 	if got := c.DSN(); got != want {
 		t.Errorf("DSN() = %q, want %q", got, want)
 	}

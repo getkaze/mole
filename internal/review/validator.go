@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/getkaze/kite/internal/llm"
+	"github.com/getkaze/mole/internal/llm"
 )
 
 func ValidateComments(comments []llm.InlineComment, diffs []llm.FileDiff) []llm.InlineComment {

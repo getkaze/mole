@@ -1,0 +1,37 @@
+# .mole/config.yaml — Per-repository Mole configuration
+# Place this file at .mole/config.yaml in your repository root.
+
+# Language for review comments.
+# Supported: en (English, default), pt-BR (Portuguese)
+language: en
+
+# Personality mode: mole (playful), formal (professional), minimal (terse)
+personality: mole
+
+# Minimum severity to show in PR comments: suggestion, attention, critical
+# min_severity: suggestion
+
+# Maximum inline comments per review (0 = unlimited)
+# max_inline_comments: 10
+
+# Glob patterns for files to skip
+# ignore:
+#   - "**/*_test.go"
+#   - "vendor/**"
+
+# Custom instructions for the AI reviewer
+# instructions: |
+#   - Prefer interfaces with max 3 methods
+#   - All endpoints need rate limiting
+#   - Use structured logging with slog
+
+# Architecture layer rules
+# architecture:
+#   style: clean
+#   layers:
+#     - name: handler
+#       path: "internal/handlers/*"
+#       can_import: ["service"]
+#     - name: service
+#       path: "internal/service/*"
+#       can_import: ["repository"]

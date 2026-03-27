@@ -1,11 +1,11 @@
-# Kite — AI-powered PR reviewer
-# Copy this file to kite.yaml and fill in your values.
-# All values can be overridden with KITE_ prefixed env vars.
+# Mole — AI-powered PR reviewer
+# Copy this file to mole.yaml and fill in your values.
+# All values can be overridden with MOLE_ prefixed env vars.
 
 github:
   # Create a GitHub App: https://github.com/settings/apps/new
   app_id: 12345
-  private_key_path: /etc/kite/github-app.pem
+  private_key_path: /etc/mole/github-app.pem
   webhook_secret: "your-webhook-secret"
 
 llm:
@@ -18,8 +18,8 @@ llm:
 mysql:
   host: localhost
   port: 3306
-  database: kite
-  user: kite
+  database: mole
+  user: mole
   password: "your-password"
 
 valkey:
@@ -36,3 +36,10 @@ worker:
 log:
   # debug | info | warn | error
   level: info
+
+# Dashboard (optional — omit to disable)
+# dashboard:
+#   github_client_id: "your-oauth-app-client-id"
+#   github_client_secret: "your-oauth-app-client-secret"
+#   session_secret: "a-random-32-char-secret-here!!!"
+#   base_url: "http://localhost:8080"

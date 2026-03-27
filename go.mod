@@ -1,4 +1,4 @@
-module github.com/getkaze/kite
+module github.com/getkaze/mole
 
 go 1.26.1
 

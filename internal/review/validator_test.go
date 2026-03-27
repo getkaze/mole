@@ -3,7 +3,7 @@ package review
 import (
 	"testing"
 
-	"github.com/getkaze/kite/internal/llm"
+	"github.com/getkaze/mole/internal/llm"
 )
 
 func TestParseHunkHeader(t *testing.T) {

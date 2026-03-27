@@ -1,0 +1,27 @@
+{{define "title"}}{{.Developer}}{{end}}
+
+{{define "content"}}
+<h1>{{.Developer}}</h1>
+<p>review activity and growth</p>
+
+<section>
+    <h2>issues by category</h2>
+    <div hx-get="/developers/{{.Developer}}/issues?period=30d" hx-trigger="load" hx-swap="innerHTML">
+        <p>loading...</p>
+    </div>
+</section>
+
+<section>
+    <h2>score trend</h2>
+    <div hx-get="/developers/{{.Developer}}/trends?period=90d" hx-trigger="load" hx-swap="innerHTML">
+        <p>loading...</p>
+    </div>
+</section>
+
+<section>
+    <h2>streaks &amp; badges</h2>
+    <div hx-get="/developers/{{.Developer}}/badges" hx-trigger="load" hx-swap="innerHTML">
+        <p>loading...</p>
+    </div>
+</section>
+{{end}}

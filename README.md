@@ -1,40 +1,66 @@
 <div align="center">
 
-  <img src="logo.svg" alt="kite" width="48" height="48"/>
+  <img src="mole.png" alt="mole" width="96" height="96"/>
 
-  # kite
+  # mole
 
-  **AI-powered PR reviews. Self-hosted. One binary.**
+  **AI-powered PR reviews + developer growth. Self-hosted. One binary.**
+
+  > Digs deep into code, elevates those who write it.
 
   <br/>
 
   [![Go](https://img.shields.io/badge/Go-1.26-00ADD8?style=flat-square&logo=go&logoColor=white)](https://golang.org)
   [![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
-  [![Platform](https://img.shields.io/badge/platform-linux%20%7C%20macOS-lightgrey?style=flat-square)](https://github.com/getkaze/kite)
+  [![Platform](https://img.shields.io/badge/platform-linux%20%7C%20macOS-lightgrey?style=flat-square)](https://github.com/getkaze/mole)
 
   <br/>
 
-  [What is Kite](#what-is-kite) · [Prerequisites](#prerequisites) · [Install](#install) · [Setup](#setup) · [Usage](#usage) · [How It Works](#how-it-works) · [Context Files](#context-files) · [Config Reference](#config-reference) · [Stack](#stack) · [Build](#build)
+  [What is Mole](#what-is-mole) · [Prerequisites](#prerequisites) · [Install](#install) · [Setup](#setup) · [Usage](#usage) · [How It Works](#how-it-works) · [Context Files](#context-files) · [Dashboard](#dashboard) · [Config Reference](#config-reference) · [Stack](#stack) · [Build](#build)
 
 </div>
 
 ---
 
-## What is Kite
+## What is Mole
 
-**Kite** (the bird that soars above, spotting what others miss) is an open-source, self-hosted AI code reviewer. Install it as a GitHub App, point it at your repos, and every PR gets an automated review powered by Claude.
+**Mole** (the animal that digs deep, finding what others miss) is an open-source, self-hosted AI code review and developer growth platform. Install it as a GitHub App, point it at your repos, and every PR gets an automated review powered by Claude — with personality, formal issue taxonomy, quality scoring, and growth tracking.
 
-- **Standard reviews** — triggered automatically on PR open, or manually with `/kite review`
-- **Deep reviews** — use Claude Opus for thorough analysis with `/kite deep-review`
-- **Ignore PRs** — skip reviews with `/kite ignore`
-- **CLI reviews** — review any PR from your terminal with `kite review owner/repo#123`
+What sets Mole apart from competitors (CodeRabbit, Kodus, Greptile):
+
+```
+Review PR → Classify issues → Track patterns → Surface insights → Grow developers
+```
+
+No other self-hosted tool closes this loop.
+
+### PR Review Features
+
+- **Standard reviews** — triggered automatically on PR open, or manually with `/mole review`
+- **Deep reviews** — use Claude Opus for thorough analysis with `/mole deep-review`
+- **Ignore PRs** — skip reviews with `/mole ignore`
+- **CLI reviews** — review any PR from your terminal with `mole review owner/repo#123`
+- **Bot personality** — 3 modes: `mole` (playful), `formal` (professional), `minimal` (terse)
+- **Issue taxonomy** — Security, Bugs, Smells, Architecture, Performance, Style (with subcategories)
+- **Quality score** — 0-100 per PR
+- **Architecture validation** — layer enforcement rules via AST analysis
+- **Security scanner** — AST-based detection of common vulnerabilities
+- **Mermaid diagrams** — sequence and class diagrams in deep reviews
+
+### Developer Growth Dashboard
+
+- **Individual view** — issue heat map, score trends, streaks, badges
+- **Team view** — issue distribution, quality trends, training suggestions
+- **Module view** — health score, tech debt tracking
+- **Gamification** — streaks, badges, achievements
+- **Role-based access** — Dev, Tech Lead, Architect, Manager (manager sees less by design)
 
 ---
 
 ## Prerequisites
 
-- **GitHub App** — you create one in your GitHub account (Kite runs as a GitHub App)
-- **MySQL 8.0+** — stores review history and ignored PRs
+- **GitHub App** — you create one in your GitHub account (Mole runs as a GitHub App)
+- **MySQL 8.0+** — stores reviews, issues, metrics
 - **Valkey 7.0+** (or Redis) — job queue and webhook dedup
 - **Anthropic API key** — for Claude-powered reviews
 
@@ -43,10 +69,10 @@
 ## Install
 
 ```bash
-curl -fsSL https://getkaze.dev/kite/install.sh | sudo bash
+curl -fsSL https://getkaze.dev/mole/install.sh | sudo bash
 ```
 
-Or download the binary from [Releases](https://github.com/getkaze/kite/releases) and place it in your `PATH`.
+Or download the binary from [Releases](https://github.com/getkaze/mole/releases) and place it in your `PATH`.
 
 ---
 
@@ -61,64 +87,67 @@ Go to [github.com/settings/apps/new](https://github.com/settings/apps/new) and c
 | Webhook URL | `https://your-server.com/webhook` |
 | Webhook secret | Generate a strong secret |
 | Permissions | Pull requests (read & write), Contents (read) |
-| Events | Pull request, Issue comment |
+| Events | Pull request, Issue comment, Installation |
 
 Download the private key and note the App ID.
 
 ### 2. Configure
 
 ```bash
-cp kite.yaml.example kite.yaml
+cp mole.yaml.example mole.yaml
 ```
 
-Fill in your GitHub App ID, private key path, webhook secret, Anthropic API key, and database credentials. All values can be overridden with `KITE_` prefixed environment variables.
+Fill in your GitHub App ID, private key path, webhook secret, Anthropic API key, and database credentials. All values can be overridden with `MOLE_` prefixed environment variables.
 
 ### 3. Run migrations
 
 ```bash
-kite migrate
+mole migrate
 ```
 
 ### 4. Start
 
 ```bash
-kite serve
+mole serve
 ```
 
-Kite starts an HTTP server (default port 8080) and a worker pool that processes review jobs.
+Mole starts an HTTP server (default port 8080), a worker pool, and a metrics aggregator.
 
 ---
 
 ## Usage
 
 ```bash
-# Start the server + workers
-kite serve
+# Start the server + workers + dashboard
+mole serve
 
 # Run database migrations
-kite migrate
+mole migrate
 
 # Check connectivity to MySQL, Valkey, and GitHub
-kite health
+mole health
+
+# Scan a repo and generate .mole/ context files
+mole init /path/to/repo
 
 # Review a PR from the CLI
-kite review owner/repo#123
-kite review owner/repo#123 --deep
-kite review owner/repo#123 --install-id 12345
+mole review owner/repo#123
+mole review owner/repo#123 --deep
+mole review owner/repo#123 --install-id 12345
 
 # Version
-kite version
+mole version
 ```
 
 ### PR Commands
 
-Comment on any PR to trigger Kite:
+Comment on any PR to trigger Mole:
 
 | Command | Description |
 |---------|-------------|
-| `/kite review` | Standard review (Claude Sonnet) |
-| `/kite deep-review` | Deep review with diagrams (Claude Opus) |
-| `/kite ignore` | Skip all future reviews for this PR |
+| `/mole review` | Standard review (Claude Sonnet) |
+| `/mole deep-review` | Deep review with diagrams (Claude Opus) |
+| `/mole ignore` | Skip all future reviews for this PR |
 
 PRs are also reviewed automatically when opened.
 
@@ -130,33 +159,66 @@ PRs are also reviewed automatically when opened.
 GitHub webhook ──> POST /webhook ──> Valkey queue ──> Worker pool
                    (signature check)   (dedup)        │
                                                       ├── Fetch PR diff (GitHub API)
-                                                      ├── Load .kite/ context files
-                                                      ├── Split large diffs by token budget
-                                                      ├── Call Claude API (per group)
+                                                      ├── Load .mole/ context + config
+                                                      ├── Run architecture validation (AST)
+                                                      ├── Run security scanner (AST)
+                                                      ├── Call Claude API (review + taxonomy)
+                                                      ├── Calculate quality score
+                                                      ├── Apply personality + severity filter
                                                       ├── Validate line numbers against diff
                                                       ├── Post review (summary + inline comments)
-                                                      └── Save record to MySQL
+                                                      ├── Save review + issues to MySQL
+                                                      └── Aggregator computes metrics (hourly)
 ```
-
-- **Large PRs** are automatically split into groups that fit within the token budget
-- **Inline comments** are validated against real diff ranges — invalid line numbers are dropped
-- **Retries** with exponential backoff (3 attempts) — failed jobs go to dead letter queue
-- **Webhook dedup** prevents duplicate reviews from redelivered webhooks
 
 ---
 
 ## Context Files
 
-Create a `.kite/` directory in your repository root with markdown files describing your project's patterns, conventions, and decisions. Kite loads these automatically and includes them in the review prompt.
+Create a `.mole/` directory in your repository root:
 
 ```
-.kite/
+.mole/
+  config.yaml        # personality, severity filter, architecture rules
   architecture.md    # system design, package structure
   conventions.md     # naming, error handling, patterns
   decisions.md       # ADRs, tech choices
 ```
 
-Context is capped at ~50K tokens. Files are loaded alphabetically. Subdirectories are supported.
+Markdown files are loaded automatically and included in the review prompt. `config.yaml` controls Mole's behavior for this repo.
+
+Generate context files automatically:
+
+```bash
+mole init /path/to/repo
+```
+
+---
+
+## Dashboard
+
+Mole includes an optional HTMX-powered dashboard for developer growth tracking. Enable it by adding dashboard config to `mole.yaml`:
+
+```yaml
+dashboard:
+  github_client_id: "your-oauth-app-client-id"
+  github_client_secret: "your-oauth-app-client-secret"
+  session_secret: "a-random-32-char-secret"
+  base_url: "http://localhost:8080"
+```
+
+Create a GitHub OAuth App (separate from the GitHub App) at [github.com/settings/developers](https://github.com/settings/developers) with callback URL `http://your-server/auth/callback`.
+
+### Access Roles
+
+| Role | Own Data | Team Average | Individual Others | Modules |
+|------|----------|-------------|-------------------|---------|
+| Dev | Yes | Yes (anonymous) | No | Yes |
+| Tech Lead | Yes | Yes | Yes (opt-in) | Yes |
+| Architect | Yes | Yes | Yes (opt-in) | Yes |
+| Manager | No | Yes | No | Yes |
+
+> Manager sees less than Tech Lead by design — this tool is for growth, not HR evaluation.
 
 ---
 
@@ -165,55 +227,62 @@ Context is capped at ~50K tokens. Files are loaded alphabetically. Subdirectorie
 ```yaml
 github:
   app_id: 12345                          # GitHub App ID
-  private_key_path: /etc/kite/app.pem    # Path to private key
+  private_key_path: /etc/mole/app.pem    # Path to private key
   webhook_secret: "secret"               # Webhook secret
 
 llm:
   api_key: "sk-ant-..."                  # Anthropic API key
-  review_model: "claude-sonnet-4-6"              # Standard review model
-  deep_review_model: "claude-opus-4-6"           # Deep review model
+  review_model: "claude-sonnet-4-6"      # Standard review model
+  deep_review_model: "claude-opus-4-6"   # Deep review model
 
 mysql:
-  host: localhost                        # MySQL host
-  port: 3306                             # MySQL port (default: 3306)
-  database: kite                         # Database name
-  user: kite                             # Database user
-  password: "password"                   # Database password
+  host: localhost
+  port: 3306
+  database: mole
+  user: mole
+  password: "password"
 
 valkey:
-  host: localhost                        # Valkey/Redis host
-  port: 6379                             # Valkey/Redis port (default: 6379)
+  host: localhost
+  port: 6379
 
 server:
-  port: 8080                             # HTTP port (default: 8080)
+  port: 8080
 
 worker:
-  count: 3                               # Concurrent workers (default: 3)
+  count: 3
 
 log:
   level: info                            # debug | info | warn | error
+
+# Dashboard (optional)
+dashboard:
+  github_client_id: ""
+  github_client_secret: ""
+  session_secret: ""
+  base_url: "http://localhost:8080"
 ```
 
-Every field can be overridden with environment variables using the `KITE_` prefix:
+Every field can be overridden with environment variables using the `MOLE_` prefix:
 
 | Variable | Config field |
 |----------|-------------|
-| `KITE_GITHUB_APP_ID` | `github.app_id` |
-| `KITE_GITHUB_PRIVATE_KEY_PATH` | `github.private_key_path` |
-| `KITE_GITHUB_WEBHOOK_SECRET` | `github.webhook_secret` |
-| `KITE_LLM_API_KEY` | `llm.api_key` |
-| `KITE_LLM_REVIEW_MODEL` | `llm.review_model` |
-| `KITE_LLM_DEEP_REVIEW_MODEL` | `llm.deep_review_model` |
-| `KITE_MYSQL_HOST` | `mysql.host` |
-| `KITE_MYSQL_PORT` | `mysql.port` |
-| `KITE_MYSQL_DATABASE` | `mysql.database` |
-| `KITE_MYSQL_USER` | `mysql.user` |
-| `KITE_MYSQL_PASSWORD` | `mysql.password` |
-| `KITE_VALKEY_HOST` | `valkey.host` |
-| `KITE_VALKEY_PORT` | `valkey.port` |
-| `KITE_SERVER_PORT` | `server.port` |
-| `KITE_WORKER_COUNT` | `worker.count` |
-| `KITE_LOG_LEVEL` | `log.level` |
+| `MOLE_GITHUB_APP_ID` | `github.app_id` |
+| `MOLE_GITHUB_PRIVATE_KEY_PATH` | `github.private_key_path` |
+| `MOLE_GITHUB_WEBHOOK_SECRET` | `github.webhook_secret` |
+| `MOLE_LLM_API_KEY` | `llm.api_key` |
+| `MOLE_LLM_REVIEW_MODEL` | `llm.review_model` |
+| `MOLE_LLM_DEEP_REVIEW_MODEL` | `llm.deep_review_model` |
+| `MOLE_MYSQL_HOST` | `mysql.host` |
+| `MOLE_MYSQL_PORT` | `mysql.port` |
+| `MOLE_MYSQL_DATABASE` | `mysql.database` |
+| `MOLE_MYSQL_USER` | `mysql.user` |
+| `MOLE_MYSQL_PASSWORD` | `mysql.password` |
+| `MOLE_VALKEY_HOST` | `valkey.host` |
+| `MOLE_VALKEY_PORT` | `valkey.port` |
+| `MOLE_SERVER_PORT` | `server.port` |
+| `MOLE_WORKER_COUNT` | `worker.count` |
+| `MOLE_LOG_LEVEL` | `log.level` |
 
 ---
 
@@ -224,6 +293,9 @@ Every field can be overridden with environment variables using the `KITE_` prefi
 | `POST` | `/webhook` | GitHub webhook receiver |
 | `GET` | `/health` | Health check (MySQL + Valkey status) |
 | `GET` | `/metrics` | Prometheus metrics |
+| `GET` | `/me` | Individual dashboard |
+| `GET` | `/team` | Team dashboard |
+| `GET` | `/modules` | Module dashboard |
 
 ---
 
@@ -235,6 +307,7 @@ Every field can be overridden with environment variables using the `KITE_` prefi
 | Database | MySQL 8.0+ |
 | Queue | Valkey 7.0+ (Redis-compatible) |
 | LLM | Claude via Anthropic SDK |
+| Dashboard | Go templates + HTMX |
 | GitHub | go-github v72 + ghinstallation v2 |
 | CLI | Cobra |
 | Logging | log/slog (JSON structured) |

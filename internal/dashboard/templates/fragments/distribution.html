@@ -1,0 +1,24 @@
+{{if .Developers}}
+<table>
+    <thead>
+        <tr>
+            <th>Developer</th>
+            <th>Reviews</th>
+            <th>Avg Score</th>
+            <th>Top Issue</th>
+        </tr>
+    </thead>
+    <tbody>
+        {{range .Developers}}
+        <tr>
+            <td>{{.Name}}</td>
+            <td>{{.Reviews}}</td>
+            <td>{{printf "%.0f" .AvgScore}}</td>
+            <td>{{.TopCategory}}</td>
+        </tr>
+        {{end}}
+    </tbody>
+</table>
+{{else}}
+<p>No team data available yet.</p>
+{{end}}

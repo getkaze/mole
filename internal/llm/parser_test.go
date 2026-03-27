@@ -57,6 +57,28 @@ func TestParseResponse_InvalidJSON(t *testing.T) {
 	}
 }
 
+func TestParseResponse_WithSubcategory(t *testing.T) {
+	raw := `{"summary":"ok","comments":[{"file":"a.go","line":1,"category":"Security","subcategory":"SQL Injection","severity":"critical","message":"bad"}]}`
+	resp, err := ParseResponse(raw)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resp.Comments[0].Subcategory != "SQL Injection" {
+		t.Errorf("subcategory = %q, want %q", resp.Comments[0].Subcategory, "SQL Injection")
+	}
+}
+
+func TestParseResponse_MissingSubcategory(t *testing.T) {
+	raw := `{"summary":"ok","comments":[{"file":"a.go","line":1,"category":"style","severity":"suggestion","message":"nit"}]}`
+	resp, err := ParseResponse(raw)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resp.Comments[0].Subcategory != "" {
+		t.Errorf("subcategory should be empty when missing, got %q", resp.Comments[0].Subcategory)
+	}
+}
+
 func TestParseResponse_Whitespace(t *testing.T) {
 	raw := "   \n  {\"summary\":\"trimmed\"} \n  "
 	resp, err := ParseResponse(raw)

@@ -9,8 +9,8 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 
-	"github.com/getkaze/kite/internal/queue"
-	"github.com/getkaze/kite/internal/store"
+	"github.com/getkaze/mole/internal/queue"
+	"github.com/getkaze/mole/internal/store"
 )
 
 type Server struct {
@@ -28,7 +28,12 @@ type HealthChecker struct {
 	Queue Pinger
 }
 
-func New(port int, webhookSecret string, q *queue.Queue, s store.Store) *Server {
+// RouteRegistrar can register HTTP routes on a mux.
+type RouteRegistrar interface {
+	RegisterRoutes(mux *http.ServeMux)
+}
+
+func New(port int, webhookSecret string, q *queue.Queue, s store.Store, extras ...RouteRegistrar) *Server {
 	mux := http.NewServeMux()
 
 	webhook := NewWebhookHandler(webhookSecret, q, s)
@@ -37,6 +42,10 @@ func New(port int, webhookSecret string, q *queue.Queue, s store.Store) *Server 
 	health := &HealthChecker{Store: s, Queue: q}
 	mux.HandleFunc("GET /health", health.Handle)
 	mux.Handle("GET /metrics", promhttp.Handler())
+
+	for _, r := range extras {
+		r.RegisterRoutes(mux)
+	}
 
 	return &Server{
 		httpServer: &http.Server{

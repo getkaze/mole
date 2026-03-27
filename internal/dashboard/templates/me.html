@@ -1,0 +1,27 @@
+{{define "title"}}dashboard{{end}}
+
+{{define "content"}}
+<h1>{{.User}}</h1>
+<p>your review activity and growth</p>
+
+<section>
+    <h2>issues by category</h2>
+    <div hx-get="/me/issues?period=30d" hx-trigger="load" hx-swap="innerHTML">
+        <p>loading...</p>
+    </div>
+</section>
+
+<section>
+    <h2>score trend</h2>
+    <div hx-get="/me/trends?period=90d" hx-trigger="load" hx-swap="innerHTML">
+        <p>loading...</p>
+    </div>
+</section>
+
+<section>
+    <h2>streaks &amp; badges</h2>
+    <div hx-get="/me/badges" hx-trigger="load" hx-swap="innerHTML">
+        <p>loading...</p>
+    </div>
+</section>
+{{end}}

@@ -66,14 +66,14 @@ jobs:
           VERSION="${{ github.ref_name }}"
           go build \
             -ldflags "-s -w -X main.version=${VERSION}" \
-            -o "bin/kite-${{ matrix.os }}-${{ matrix.arch }}" \
-            ./cmd/kite
+            -o "bin/mole-${{ matrix.os }}-${{ matrix.arch }}" \
+            ./cmd/mole
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: kite-${{ matrix.os }}-${{ matrix.arch }}
-          path: bin/kite-${{ matrix.os }}-${{ matrix.arch }}
+          name: mole-${{ matrix.os }}-${{ matrix.arch }}
+          path: bin/mole-${{ matrix.os }}-${{ matrix.arch }}
 
   release:
     name: Publish release
@@ -96,17 +96,17 @@ jobs:
           ## Installation
 
           \`\`\`bash
-          curl -fsSL https://getkaze.dev/kite/install.sh | sudo bash
+          curl -fsSL https://getkaze.dev/mole/install.sh | sudo bash
           \`\`\`
 
           ## Manual download
 
           | Platform | Link |
           |---|---|
-          | Linux amd64  | [kite-linux-amd64](${{ github.server_url }}/${{ github.repository }}/releases/download/${{ github.ref_name }}/kite-linux-amd64) |
-          | Linux arm64  | [kite-linux-arm64](${{ github.server_url }}/${{ github.repository }}/releases/download/${{ github.ref_name }}/kite-linux-arm64) |
-          | macOS amd64  | [kite-darwin-amd64](${{ github.server_url }}/${{ github.repository }}/releases/download/${{ github.ref_name }}/kite-darwin-amd64) |
-          | macOS arm64  | [kite-darwin-arm64](${{ github.server_url }}/${{ github.repository }}/releases/download/${{ github.ref_name }}/kite-darwin-arm64) |
+          | Linux amd64  | [mole-linux-amd64](${{ github.server_url }}/${{ github.repository }}/releases/download/${{ github.ref_name }}/mole-linux-amd64) |
+          | Linux arm64  | [mole-linux-arm64](${{ github.server_url }}/${{ github.repository }}/releases/download/${{ github.ref_name }}/mole-linux-arm64) |
+          | macOS amd64  | [mole-darwin-amd64](${{ github.server_url }}/${{ github.repository }}/releases/download/${{ github.ref_name }}/mole-darwin-amd64) |
+          | macOS arm64  | [mole-darwin-arm64](${{ github.server_url }}/${{ github.repository }}/releases/download/${{ github.ref_name }}/mole-darwin-arm64) |
           FOOTER
 
       - name: Create release
@@ -115,9 +115,9 @@ jobs:
           name: ${{ github.ref_name }}
           body_path: /tmp/release-body.md
           files: |
-            artifacts/kite-linux-amd64/kite-linux-amd64
-            artifacts/kite-linux-arm64/kite-linux-arm64
-            artifacts/kite-darwin-amd64/kite-darwin-amd64
-            artifacts/kite-darwin-arm64/kite-darwin-arm64
+            artifacts/mole-linux-amd64/mole-linux-amd64
+            artifacts/mole-linux-arm64/mole-linux-arm64
+            artifacts/mole-darwin-amd64/mole-darwin-amd64
+            artifacts/mole-darwin-arm64/mole-darwin-arm64
           draft: false
           prerelease: ${{ contains(github.ref_name, '-') }}

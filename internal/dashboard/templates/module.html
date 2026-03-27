@@ -1,0 +1,21 @@
+{{define "title"}}{{.Module.ModuleName}}{{end}}
+
+{{define "content"}}
+<h1>{{.Module.ModuleName}}</h1>
+<p>module health and debt tracking</p>
+
+<div class="metrics-summary">
+    <div class="metric">
+        <span class="metric-value">{{printf "%.0f" .Module.HealthScore}}</span>
+        <span class="metric-label">health</span>
+    </div>
+    <div class="metric">
+        <span class="metric-value">{{.Module.TotalIssues}}</span>
+        <span class="metric-label">issues</span>
+    </div>
+    <div class="metric">
+        <span class="metric-value">{{.Module.DebtItems}}</span>
+        <span class="metric-label">debt</span>
+    </div>
+</div>
+{{end}}

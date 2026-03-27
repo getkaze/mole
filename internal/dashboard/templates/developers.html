@@ -1,0 +1,39 @@
+{{define "title"}}developers{{end}}
+
+{{define "content"}}
+<h1>developers</h1>
+<p>individual review activity and growth</p>
+
+{{if .Developers}}
+<section>
+    <h2>overview</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>developer</th>
+                <th>reviews</th>
+                <th>avg score</th>
+                <th>streak</th>
+                <th>top issue</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Developers}}
+            <tr>
+                <td><a href="/developers/{{.Login}}">{{.Name}}</a></td>
+                <td>{{.Reviews}}</td>
+                <td>{{printf "%.0f" .AvgScore}}</td>
+                <td>{{.Streak}}</td>
+                <td>{{.TopCategory}}</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</section>
+{{else}}
+<section>
+    <h2>overview</h2>
+    <p>no developer data yet. metrics are aggregated after reviews.</p>
+</section>
+{{end}}
+{{end}}

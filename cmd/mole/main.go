@@ -13,15 +13,17 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/getkaze/kite/internal/config"
-	ghclient "github.com/getkaze/kite/internal/github"
-	"github.com/getkaze/kite/internal/llm"
-	"github.com/getkaze/kite/internal/migrate"
-	"github.com/getkaze/kite/internal/queue"
-	"github.com/getkaze/kite/internal/review"
-	"github.com/getkaze/kite/internal/server"
-	"github.com/getkaze/kite/internal/store"
-	"github.com/getkaze/kite/internal/worker"
+	"github.com/getkaze/mole/internal/aggregator"
+	"github.com/getkaze/mole/internal/config"
+	"github.com/getkaze/mole/internal/dashboard"
+	ghclient "github.com/getkaze/mole/internal/github"
+	"github.com/getkaze/mole/internal/llm"
+	"github.com/getkaze/mole/internal/migrate"
+	"github.com/getkaze/mole/internal/queue"
+	"github.com/getkaze/mole/internal/review"
+	"github.com/getkaze/mole/internal/server"
+	"github.com/getkaze/mole/internal/store"
+	"github.com/getkaze/mole/internal/worker"
 )
 
 var (
@@ -31,18 +33,21 @@ var (
 
 func main() {
 	root := &cobra.Command{
-		Use:     "kite",
-		Short:   "AI-powered PR reviewer",
+		Use:     "mole",
+		Short:   "AI-powered PR reviewer — digs deep into code, elevates those who write it",
 		Version: version,
 	}
 
-	root.PersistentFlags().StringVar(&configPath, "config", "kite.yaml", "path to config file")
+	root.CompletionOptions.DisableDefaultCmd = true
+	root.PersistentFlags().StringVar(&configPath, "config", "mole.yaml", "path to config file")
 
 	root.AddCommand(
 		serveCmd(),
 		migrateCmd(),
 		healthCmd(),
 		reviewCmd(),
+		initCmd(),
+		adminCmd(),
 	)
 
 	if err := root.Execute(); err != nil {
@@ -82,12 +87,31 @@ func serveCmd() *cobra.Command {
 
 			pool := worker.NewPool(q, svc.Execute, cfg.Worker.Count)
 
-			srv := server.New(cfg.Server.Port, cfg.GitHub.WebhookSecret, q, st)
+			var extras []server.RouteRegistrar
+			if cfg.Dashboard.Enabled() {
+				dash, err := dashboard.New(st, dashboard.Config{
+					GitHubClientID:     cfg.Dashboard.GitHubClientID,
+					GitHubClientSecret: cfg.Dashboard.GitHubClientSecret,
+					SessionSecret:      cfg.Dashboard.SessionSecret,
+					BaseURL:            cfg.Dashboard.BaseURL,
+				})
+				if err != nil {
+					return fmt.Errorf("dashboard: %w", err)
+				}
+				extras = append(extras, dash)
+				slog.Info("dashboard enabled", "base_url", cfg.Dashboard.BaseURL)
+			}
+
+			srv := server.New(cfg.Server.Port, cfg.GitHub.WebhookSecret, q, st, extras...)
 
 			ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 			defer stop()
 
 			pool.Start(ctx)
+
+			reactionSyncer := aggregator.NewReactionSyncer(st, ghFactory)
+			agg := aggregator.New(st, time.Hour, aggregator.WithReactionSyncer(reactionSyncer))
+			go agg.Run(ctx)
 
 			go func() {
 				if err := srv.Start(); err != nil {
@@ -96,7 +120,7 @@ func serveCmd() *cobra.Command {
 				}
 			}()
 
-			slog.Info("kite is running",
+			slog.Info("mole is running",
 				"port", cfg.Server.Port,
 				"workers", cfg.Worker.Count,
 				"review_model", cfg.LLM.ReviewModel,
@@ -111,7 +135,7 @@ func serveCmd() *cobra.Command {
 			srv.Shutdown(shutdownCtx)
 			pool.Stop()
 
-			slog.Info("kite stopped")
+			slog.Info("mole stopped")
 			return nil
 		},
 	}

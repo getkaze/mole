@@ -4,29 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/getkaze/kite/internal/i18n"
-	"github.com/getkaze/kite/internal/llm"
+	"github.com/getkaze/mole/internal/llm"
+	"github.com/getkaze/mole/internal/personality"
 )
-
-var severityBadge = map[string]string{
-	"must-fix":   "🟥",
-	"should-fix": "🟠",
-	"consider":   "🔵",
-}
-
-// severityLabel returns the localized label for a severity level.
-func severityLabel(severity string, msgs i18n.Messages) string {
-	switch severity {
-	case "must-fix":
-		return msgs.MustFix
-	case "should-fix":
-		return msgs.ShouldFix
-	case "consider":
-		return msgs.Consider
-	default:
-		return msgs.Consider
-	}
-}
 
 type FormattedReview struct {
 	Body     string
@@ -39,54 +19,67 @@ type FormattedComment struct {
 	Body string
 }
 
-func Format(resp *llm.ReviewResponse, lang string) *FormattedReview {
-	msgs := i18n.Get(lang)
+// Format renders a review response using the personality engine and score.
+func Format(resp *llm.ReviewResponse, engine *personality.Engine, score int) *FormattedReview {
 	var body strings.Builder
 
-	body.WriteString(fmt.Sprintf("## %s\n\n", msgs.ReviewHeader))
-	body.WriteString(fmt.Sprintf("### %s\n\n", msgs.Summary))
-	body.WriteString(resp.Summary)
+	// Header
+	body.WriteString(fmt.Sprintf("## %s\n\n", engine.ReviewHeader()))
+
+	// Score badge
+	body.WriteString(engine.ScoreBadge(score))
 	body.WriteString("\n\n")
 
+	// Summary with personality
+	body.WriteString(engine.Summary(score, len(resp.Comments)))
+	body.WriteString("\n\n")
+
+	// Diagrams
 	for _, diagram := range resp.Diagrams {
-		body.WriteString(fmt.Sprintf("### %s\n\n", msgs.DiagramHeader))
+		body.WriteString("### Diagram\n\n")
 		fmt.Fprintf(&body, "```mermaid\n%s\n```\n\n", diagram)
 	}
 
+	// Issues
 	if len(resp.Comments) > 0 {
-		body.WriteString(fmt.Sprintf("### %s\n\n", msgs.IssuesFound))
+		body.WriteString("### Issues\n\n")
 		for i, c := range resp.Comments {
-			badge := severityBadge[c.Severity]
-			if badge == "" {
-				badge = severityBadge["consider"]
+			badge := engine.SeverityBadge(c.Severity)
+			label := engine.SeverityLabel(c.Severity)
+			cat := c.Category
+			if c.Subcategory != "" {
+				cat = fmt.Sprintf("%s / %s", c.Category, c.Subcategory)
 			}
-			label := severityLabel(c.Severity, msgs)
 			fmt.Fprintf(&body, "**%d.** `%s:%d` — %s **%s** · %s\n> %s\n\n",
-				i+1, c.File, c.Line, badge, label, c.Category, c.Message)
+				i+1, c.File, c.Line, badge, label, cat, c.Message)
 		}
 	}
 
+	// Suggestions
 	if len(resp.Suggestions) > 0 {
-		body.WriteString(fmt.Sprintf("### %s\n\n", msgs.Suggestions))
+		body.WriteString("### Suggestions\n\n")
 		for _, s := range resp.Suggestions {
 			fmt.Fprintf(&body, "- %s\n", s)
 		}
 		body.WriteString("\n")
 	}
 
+	// Clean PR message
 	if len(resp.Comments) == 0 {
-		body.WriteString(msgs.NoIssues)
+		body.WriteString(engine.CleanPR())
 		body.WriteString("\n")
 	}
 
+	// Inline comments
 	comments := make([]FormattedComment, 0, len(resp.Comments))
 	for _, c := range resp.Comments {
-		badge := severityBadge[c.Severity]
-		if badge == "" {
-			badge = severityBadge["consider"]
+		badge := engine.SeverityBadge(c.Severity)
+		label := engine.SeverityLabel(c.Severity)
+		cat := c.Category
+		if c.Subcategory != "" {
+			cat = fmt.Sprintf("%s / %s", c.Category, c.Subcategory)
 		}
-		label := severityLabel(c.Severity, msgs)
-		commentBody := fmt.Sprintf("%s **%s** · `%s`\n\n---\n%s", badge, label, c.Category, c.Message)
+		commentBody := fmt.Sprintf("%s **%s** · `%s`\n\n---\n%s", badge, label, cat, c.Message)
 		comments = append(comments, FormattedComment{
 			File: c.File,
 			Line: c.Line,

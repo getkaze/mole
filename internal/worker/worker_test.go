@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/getkaze/kite/internal/queue"
+	"github.com/getkaze/mole/internal/queue"
 )
 
 func TestNewPool(t *testing.T) {

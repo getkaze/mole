@@ -1,0 +1,37 @@
+{{define "title"}}modules{{end}}
+
+{{define "content"}}
+<h1>modules</h1>
+<p>health scores and tech debt by module</p>
+
+{{if .Modules}}
+<section>
+    <h2>overview</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>module</th>
+                <th>health</th>
+                <th>issues</th>
+                <th>debt</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Modules}}
+            <tr>
+                <td><a href="/modules/{{.ModuleName}}">{{.ModuleName}}</a></td>
+                <td>{{printf "%.0f" .HealthScore}}/100</td>
+                <td>{{.TotalIssues}}</td>
+                <td>{{.DebtItems}}</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</section>
+{{else}}
+<section>
+    <h2>overview</h2>
+    <p>no module data yet. metrics are aggregated after reviews.</p>
+</section>
+{{end}}
+{{end}}

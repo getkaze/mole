@@ -1,0 +1,37 @@
+{{define "layout"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mole — {{template "title" .}}</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="/static/htmx.min.js"></script>
+</head>
+<body>
+    <nav>
+        <div class="nav-brand">
+            <a href="/me">mole</a>
+        </div>
+        <ul>
+            <li><a href="/me">dashboard</a></li>
+            <li><a href="/developers">developers</a></li>
+            <li><a href="/team">team</a></li>
+            <li><a href="/modules">modules</a></li>
+        </ul>
+        <div class="nav-user">
+            {{if .User}}
+                <span>{{.User}}</span>
+                <a href="/auth/logout">logout</a>
+            {{end}}
+        </div>
+    </nav>
+    <main>
+        {{template "content" .}}
+    </main>
+    <footer>
+        mole · digs deep into code, elevates those who write it
+    </footer>
+</body>
+</html>
+{{end}}

@@ -1,0 +1,25 @@
+{{if .Rate}}
+<div class="metrics-summary">
+    <div class="metric">
+        <span class="metric-value">{{printf "%.0f" .Rate.Rate}}%</span>
+        <span class="metric-label">acceptance rate</span>
+    </div>
+    <div class="metric">
+        <span class="metric-value">{{.Rate.Confirmed}}</span>
+        <span class="metric-label">confirmed</span>
+    </div>
+    <div class="metric">
+        <span class="metric-value">{{.Rate.FalsePositive}}</span>
+        <span class="metric-label">false positive</span>
+    </div>
+    <div class="metric">
+        <span class="metric-value">{{.Rate.Pending}}</span>
+        <span class="metric-label">pending</span>
+    </div>
+</div>
+<p style="font-size: 12px; color: var(--muted2); margin-top: 8px;">
+    developers react with 👍 to confirm or 👎 to mark false positive on inline comments
+</p>
+{{else}}
+<p>no validation data yet. developers can react to inline comments with 👍 or 👎.</p>
+{{end}}

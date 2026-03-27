@@ -1,0 +1,19 @@
+{{if .Streak}}
+<div class="streak">
+    <span class="streak-count">{{.Streak}}</span>
+    <span class="streak-label">consecutive PRs without critical issues</span>
+</div>
+{{end}}
+
+{{if .Badges}}
+<div class="badges">
+    {{range .Badges}}
+    <div class="badge">
+        <span class="badge-icon">{{.Icon}}</span>
+        <span class="badge-name">{{.Name}}</span>
+    </div>
+    {{end}}
+</div>
+{{else}}
+<p>Keep reviewing PRs to earn badges!</p>
+{{end}}

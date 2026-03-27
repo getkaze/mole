@@ -1,0 +1,13 @@
+{{if .Weeks}}
+<div class="trend-chart">
+    {{range .Weeks}}
+    <div class="trend-bar-container">
+        <div class="trend-bar {{.Color}}" style="height: {{.Height}}%"></div>
+        <span class="trend-label">{{.Label}}</span>
+        <span class="trend-value">{{printf "%.0f" .Score}}</span>
+    </div>
+    {{end}}
+</div>
+{{else}}
+<p>Not enough data for trends yet.</p>
+{{end}}

@@ -3,6 +3,7 @@ package llm
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/anthropics/anthropic-sdk-go"
 	"github.com/anthropics/anthropic-sdk-go/option"
@@ -18,7 +19,8 @@ func NewClaude(apiKey string) *Claude {
 }
 
 func (c *Claude) Review(ctx context.Context, req ReviewRequest) (*ReviewResponse, error) {
-	system, user := BuildPrompt(req.Diff, req.Context, req.Model != "" && req.Model != "standard")
+	deep := strings.Contains(req.Model, "opus")
+	system, user := BuildPrompt(req.Diff, req.Context, req.Instructions, req.PreviousIssues, deep)
 
 	if req.SystemPrompt != "" {
 		system = req.SystemPrompt
@@ -62,6 +64,36 @@ func (c *Claude) Review(ctx context.Context, req ReviewRequest) (*ReviewResponse
 	}
 
 	return resp, nil
+}
+
+func (c *Claude) Generate(ctx context.Context, req GenerateRequest) (string, error) {
+	stream := c.client.Messages.NewStreaming(ctx, anthropic.MessageNewParams{
+		Model:     req.Model,
+		MaxTokens: maxTokensForModel(req.Model),
+		System: []anthropic.TextBlockParam{
+			{Text: req.System, Type: "text"},
+		},
+		Messages: []anthropic.MessageParam{
+			anthropic.NewUserMessage(anthropic.NewTextBlock(req.User)),
+		},
+	})
+
+	msg := anthropic.Message{}
+	for stream.Next() {
+		msg.Accumulate(stream.Current())
+	}
+	if err := stream.Err(); err != nil {
+		return "", fmt.Errorf("claude API call: %w", err)
+	}
+
+	var b strings.Builder
+	for _, block := range msg.Content {
+		if block.Type == "text" {
+			b.WriteString(block.Text)
+		}
+	}
+
+	return b.String(), nil
 }
 
 func maxTokensForModel(model string) int64 {

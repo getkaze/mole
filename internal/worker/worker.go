@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/getkaze/kite/internal/metrics"
-	"github.com/getkaze/kite/internal/queue"
+	"github.com/getkaze/mole/internal/metrics"
+	"github.com/getkaze/mole/internal/queue"
 )
 
 type ReviewFunc func(ctx context.Context, job queue.Job) error

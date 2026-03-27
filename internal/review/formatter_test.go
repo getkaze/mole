@@ -4,40 +4,39 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/getkaze/kite/internal/llm"
+	"github.com/getkaze/mole/internal/llm"
+	"github.com/getkaze/mole/internal/personality"
 )
 
 func TestFormat_BasicReview(t *testing.T) {
 	resp := &llm.ReviewResponse{
 		Summary: "Looks good overall.",
 		Comments: []llm.InlineComment{
-			{File: "main.go", Line: 10, Category: "security", Severity: "must-fix", Message: "SQL injection"},
+			{File: "main.go", Line: 10, Category: "Security", Subcategory: "SQL Injection", Severity: "critical", Message: "SQL injection"},
 		},
 		Suggestions: []string{"Add tests"},
 	}
 
-	result := Format(resp, "en")
+	engine := personality.New("mole", "en")
+	result := Format(resp, engine, 85)
 
-	if !strings.Contains(result.Body, "Kite Review") {
+	if !strings.Contains(result.Body, "Mole Review") {
 		t.Error("body should contain header")
 	}
-	if !strings.Contains(result.Body, "Looks good overall.") {
-		t.Error("body should contain summary")
+	if !strings.Contains(result.Body, "85") {
+		t.Error("body should contain score")
 	}
 	if !strings.Contains(result.Body, "SQL injection") {
-		t.Error("body should contain comment")
+		t.Error("body should contain comment message")
+	}
+	if !strings.Contains(result.Body, "Security / SQL Injection") {
+		t.Error("body should contain category / subcategory")
 	}
 	if !strings.Contains(result.Body, "Add tests") {
 		t.Error("body should contain suggestion")
 	}
 	if len(result.Comments) != 1 {
 		t.Errorf("comments = %d, want 1", len(result.Comments))
-	}
-	if !strings.Contains(result.Comments[0].Body, "`security`") {
-		t.Error("inline comment should contain category in code format")
-	}
-	if !strings.Contains(result.Comments[0].Body, "---\n") {
-		t.Error("inline comment should contain separator")
 	}
 }
 
@@ -46,9 +45,43 @@ func TestFormat_NoComments(t *testing.T) {
 		Summary:  "Clean code.",
 		Comments: nil,
 	}
-	result := Format(resp, "en")
-	if !strings.Contains(result.Body, "No issues found") {
-		t.Error("should show 'No issues found' when no comments")
+	engine := personality.New("mole", "en")
+	result := Format(resp, engine, 100)
+	if !strings.Contains(result.Body, "Looking good") {
+		t.Error("should show clean PR message for mole personality")
+	}
+}
+
+func TestFormat_FormalPersonality(t *testing.T) {
+	resp := &llm.ReviewResponse{
+		Summary: "issues found",
+		Comments: []llm.InlineComment{
+			{File: "a.go", Line: 1, Category: "Bugs", Severity: "critical", Message: "null pointer"},
+		},
+	}
+	engine := personality.New("formal", "en")
+	result := Format(resp, engine, 85)
+
+	if !strings.Contains(result.Body, "Quality Score") {
+		t.Error("formal should show Quality Score badge")
+	}
+	if !strings.Contains(result.Body, "Critical") {
+		t.Error("should contain severity label")
+	}
+}
+
+func TestFormat_MinimalPersonality(t *testing.T) {
+	resp := &llm.ReviewResponse{
+		Summary: "issues",
+		Comments: []llm.InlineComment{
+			{File: "a.go", Line: 1, Category: "Style", Severity: "suggestion", Message: "nit"},
+		},
+	}
+	engine := personality.New("minimal", "en")
+	result := Format(resp, engine, 99)
+
+	if !strings.Contains(result.Body, "99/100") {
+		t.Error("minimal should show score")
 	}
 }
 
@@ -56,51 +89,45 @@ func TestFormat_SeverityBadges(t *testing.T) {
 	resp := &llm.ReviewResponse{
 		Summary: "issues",
 		Comments: []llm.InlineComment{
-			{File: "a.go", Line: 1, Category: "bug", Severity: "must-fix", Message: "null pointer"},
-			{File: "b.go", Line: 2, Category: "style", Severity: "should-fix", Message: "naming"},
-			{File: "c.go", Line: 3, Category: "style", Severity: "consider", Message: "nit"},
-			{File: "d.go", Line: 4, Category: "style", Severity: "unknown", Message: "fallback"},
+			{File: "a.go", Line: 1, Category: "Bugs", Severity: "critical", Message: "null pointer"},
+			{File: "b.go", Line: 2, Category: "Style", Severity: "attention", Message: "naming"},
+			{File: "c.go", Line: 3, Category: "Style", Severity: "suggestion", Message: "nit"},
 		},
 	}
-	result := Format(resp, "en")
+	engine := personality.New("mole", "en")
+	result := Format(resp, engine, 75)
 
-	if len(result.Comments) != 4 {
-		t.Fatalf("got %d comments, want 4", len(result.Comments))
+	if len(result.Comments) != 3 {
+		t.Fatalf("got %d comments, want 3", len(result.Comments))
 	}
-	if !strings.Contains(result.Comments[0].Body, "Must Fix") {
-		t.Error("must-fix should have Must Fix badge")
+	if !strings.Contains(result.Comments[0].Body, "Critical") {
+		t.Error("critical should have Critical label")
 	}
-	if !strings.Contains(result.Comments[1].Body, "Should Fix") {
-		t.Error("should-fix should have Should Fix badge")
+	if !strings.Contains(result.Comments[1].Body, "Attention") {
+		t.Error("attention should have Attention label")
 	}
-	if !strings.Contains(result.Comments[2].Body, "Consider") {
-		t.Error("consider should have Consider badge")
-	}
-	// Unknown severity falls back to consider
-	if !strings.Contains(result.Comments[3].Body, "Consider") {
-		t.Error("unknown severity should fall back to Consider badge")
+	if !strings.Contains(result.Comments[2].Body, "Suggestion") {
+		t.Error("suggestion should have Suggestion label")
 	}
 }
 
-func TestFormat_ListLayout(t *testing.T) {
+func TestFormat_SubcategoryDisplay(t *testing.T) {
 	resp := &llm.ReviewResponse{
-		Summary: "found issues",
+		Summary: "issues",
 		Comments: []llm.InlineComment{
-			{File: "main.go", Line: 10, Category: "security", Severity: "must-fix", Message: "SQL injection"},
+			{File: "a.go", Line: 1, Category: "Security", Subcategory: "XSS", Severity: "critical", Message: "xss"},
+			{File: "b.go", Line: 2, Category: "Style", Severity: "suggestion", Message: "nit"},
 		},
 	}
-	result := Format(resp, "en")
+	engine := personality.New("mole", "en")
+	result := Format(resp, engine, 84)
 
-	// Should use list format: "**1.** `file:line` — badge **label** · category"
-	if !strings.Contains(result.Body, "**1.** `main.go:10`") {
-		t.Error("body should use list format with file:line")
+	if !strings.Contains(result.Body, "Security / XSS") {
+		t.Error("should show category / subcategory when subcategory present")
 	}
-	if !strings.Contains(result.Body, "Must Fix") {
-		t.Error("body should contain severity label")
-	}
-	// Should NOT contain table separators
-	if strings.Contains(result.Body, "|---|") {
-		t.Error("body should not contain table format")
+	// No subcategory — should show just category
+	if strings.Contains(result.Body, "Style /") {
+		t.Error("should not show slash when no subcategory")
 	}
 }
 
@@ -108,29 +135,30 @@ func TestFormat_PortugueseBR(t *testing.T) {
 	resp := &llm.ReviewResponse{
 		Summary: "found issues",
 		Comments: []llm.InlineComment{
-			{File: "main.go", Line: 10, Category: "security", Severity: "must-fix", Message: "SQL injection"},
+			{File: "main.go", Line: 10, Category: "Security", Severity: "critical", Message: "SQL injection"},
 		},
 	}
-	result := Format(resp, "pt-BR")
+	engine := personality.New("mole", "pt-BR")
+	result := Format(resp, engine, 85)
 
-	if !strings.Contains(result.Body, "Resumo") {
-		t.Error("body should contain Portuguese summary header")
+	if !strings.Contains(result.Body, "toupeira") {
+		t.Error("pt-BR mole should use Portuguese text")
 	}
-	if !strings.Contains(result.Body, "Problemas Encontrados") {
-		t.Error("body should contain Portuguese issues header")
-	}
-	if !strings.Contains(result.Comments[0].Body, "Corrigir") {
+	if !strings.Contains(result.Comments[0].Body, "Critico") {
 		t.Error("inline comment should use Portuguese severity label")
 	}
 }
 
-func TestFormat_UnknownLangFallsBackToEnglish(t *testing.T) {
+func TestFormat_Diagrams(t *testing.T) {
 	resp := &llm.ReviewResponse{
-		Summary:  "Clean.",
+		Summary:  "has diagrams",
 		Comments: nil,
+		Diagrams: []string{"sequenceDiagram\n    A->>B: call"},
 	}
-	result := Format(resp, "fr-FR")
-	if !strings.Contains(result.Body, "No issues found") {
-		t.Error("unknown lang should fall back to English")
+	engine := personality.New("mole", "en")
+	result := Format(resp, engine, 100)
+
+	if !strings.Contains(result.Body, "```mermaid") {
+		t.Error("should contain mermaid code block")
 	}
 }
