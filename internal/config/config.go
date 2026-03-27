@@ -182,6 +182,18 @@ func (c *Config) applyEnvOverrides() {
 	if v := os.Getenv("MOLE_LOG_LEVEL"); v != "" {
 		c.Log.Level = v
 	}
+	if v := os.Getenv("MOLE_DASHBOARD_GITHUB_CLIENT_ID"); v != "" {
+		c.Dashboard.GitHubClientID = v
+	}
+	if v := os.Getenv("MOLE_DASHBOARD_GITHUB_CLIENT_SECRET"); v != "" {
+		c.Dashboard.GitHubClientSecret = v
+	}
+	if v := os.Getenv("MOLE_DASHBOARD_SESSION_SECRET"); v != "" {
+		c.Dashboard.SessionSecret = v
+	}
+	if v := os.Getenv("MOLE_DASHBOARD_BASE_URL"); v != "" {
+		c.Dashboard.BaseURL = v
+	}
 }
 
 func (c *Config) validate() error {
