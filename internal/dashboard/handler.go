@@ -289,6 +289,9 @@ func (d *Dashboard) renderIssuesFragment(w http.ResponseWriter, r *http.Request,
 	counts := make(map[string]int)
 	total := 0
 	for _, i := range issues {
+		if i.Validation == "false_positive" {
+			continue
+		}
 		counts[i.Category]++
 		total++
 	}

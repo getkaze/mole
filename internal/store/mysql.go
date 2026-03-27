@@ -696,6 +696,7 @@ func (s *MySQLStore) ListTopIssuePatterns(ctx context.Context, from, to time.Tim
 		`SELECT category, subcategory, COUNT(*) as cnt
 		 FROM issues
 		 WHERE created_at BETWEEN ? AND ?
+		   AND validation != 'false_positive'
 		 GROUP BY category, subcategory
 		 ORDER BY cnt DESC
 		 LIMIT ?`,
