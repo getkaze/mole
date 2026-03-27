@@ -148,7 +148,7 @@ func (s *MySQLStore) ValidateIssueByCommentID(ctx context.Context, githubComment
 
 func (s *MySQLStore) GetIssuesByPR(ctx context.Context, repo string, prNumber int) ([]Issue, error) {
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT i.id, i.review_id, i.pr_author, i.category, i.subcategory, i.severity, i.file_path, i.line_number, i.description, i.suggestion, i.module_name, i.created_at
+		`SELECT i.id, i.review_id, i.pr_author, i.category, i.subcategory, i.severity, i.file_path, i.line_number, i.description, i.suggestion, i.module_name, i.validation, i.created_at
 		 FROM issues i
 		 JOIN reviews r ON r.id = i.review_id
 		 WHERE r.repo = ? AND r.pr_number = ?
@@ -223,7 +223,7 @@ func (s *MySQLStore) GetOverallAcceptanceRate(ctx context.Context, from, to time
 
 func (s *MySQLStore) GetIssuesByDeveloper(ctx context.Context, developer string, from, to time.Time) ([]Issue, error) {
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT id, review_id, pr_author, category, subcategory, severity, file_path, line_number, description, suggestion, module_name, created_at
+		`SELECT id, review_id, pr_author, category, subcategory, severity, file_path, line_number, description, suggestion, module_name, validation, created_at
 		 FROM issues WHERE pr_author = ? AND created_at BETWEEN ? AND ? ORDER BY created_at`,
 		developer, from, to,
 	)
@@ -237,7 +237,7 @@ func (s *MySQLStore) GetIssuesByDeveloper(ctx context.Context, developer string,
 
 func (s *MySQLStore) GetPendingValidationIssues(ctx context.Context, from, to time.Time) ([]Issue, error) {
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT id, review_id, pr_author, category, subcategory, severity, file_path, line_number, description, suggestion, module_name, created_at
+		`SELECT id, review_id, pr_author, category, subcategory, severity, file_path, line_number, description, suggestion, module_name, validation, created_at
 		 FROM issues WHERE validation = 'pending' AND github_comment_id IS NOT NULL AND created_at BETWEEN ? AND ? ORDER BY created_at`,
 		from, to,
 	)
@@ -290,7 +290,7 @@ func (s *MySQLStore) GetReviewsWithPendingIssues(ctx context.Context, from, to t
 
 func (s *MySQLStore) GetIssuesByModule(ctx context.Context, module string, from, to time.Time) ([]Issue, error) {
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT id, review_id, pr_author, category, subcategory, severity, file_path, line_number, description, suggestion, module_name, created_at
+		`SELECT id, review_id, pr_author, category, subcategory, severity, file_path, line_number, description, suggestion, module_name, validation, created_at
 		 FROM issues WHERE module_name = ? AND created_at BETWEEN ? AND ? ORDER BY created_at`,
 		module, from, to,
 	)
@@ -306,15 +306,16 @@ func scanIssues(rows *sql.Rows) ([]Issue, error) {
 	var issues []Issue
 	for rows.Next() {
 		var i Issue
-		var suggestion, module sql.NullString
+		var suggestion, module, validation sql.NullString
 		if err := rows.Scan(
 			&i.ID, &i.ReviewID, &i.PRAuthor, &i.Category, &i.Subcategory, &i.Severity,
-			&i.FilePath, &i.LineNumber, &i.Description, &suggestion, &module, &i.CreatedAt,
+			&i.FilePath, &i.LineNumber, &i.Description, &suggestion, &module, &validation, &i.CreatedAt,
 		); err != nil {
 			return nil, err
 		}
 		i.Suggestion = suggestion.String
 		i.ModuleName = module.String
+		i.Validation = validation.String
 		issues = append(issues, i)
 	}
 	return issues, rows.Err()
@@ -497,6 +498,94 @@ func (s *MySQLStore) UpsertAccess(ctx context.Context, access *DashboardAccess) 
 		access.GitHubUser, access.Role, access.IndividualVisibility,
 	)
 	return err
+}
+
+// Score recalculation
+
+func (s *MySQLStore) GetReviewIDsWithFalsePositives(ctx context.Context, from, to time.Time) ([]int64, error) {
+	rows, err := s.db.QueryContext(ctx,
+		`SELECT DISTINCT review_id FROM issues
+		 WHERE validation = 'false_positive' AND created_at BETWEEN ? AND ?`,
+		from, to,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var ids []int64
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+	return ids, rows.Err()
+}
+
+func (s *MySQLStore) GetNonFalsePositiveSeverities(ctx context.Context, reviewID int64) ([]string, error) {
+	rows, err := s.db.QueryContext(ctx,
+		`SELECT severity FROM issues
+		 WHERE review_id = ? AND validation != 'false_positive'`,
+		reviewID,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var severities []string
+	for rows.Next() {
+		var sev string
+		if err := rows.Scan(&sev); err != nil {
+			return nil, err
+		}
+		severities = append(severities, sev)
+	}
+	return severities, rows.Err()
+}
+
+func (s *MySQLStore) UpdateReviewScore(ctx context.Context, reviewID int64, score int) error {
+	_, err := s.db.ExecContext(ctx,
+		`UPDATE reviews SET score = ? WHERE id = ?`,
+		score, reviewID,
+	)
+	return err
+}
+
+// Costs
+
+func (s *MySQLStore) GetTokenUsageSummary(ctx context.Context, from, to time.Time, pricing map[string][2]float64) ([]TokenUsageSummary, error) {
+	rows, err := s.db.QueryContext(ctx,
+		`SELECT model, COUNT(*) as reviews, SUM(input_tokens) as input_tokens, SUM(output_tokens) as output_tokens
+		 FROM reviews
+		 WHERE status = 'success' AND created_at BETWEEN ? AND ?
+		 GROUP BY model
+		 ORDER BY SUM(input_tokens) + SUM(output_tokens) DESC`,
+		from, to,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var summaries []TokenUsageSummary
+	for rows.Next() {
+		var s TokenUsageSummary
+		if err := rows.Scan(&s.Model, &s.Reviews, &s.InputTokens, &s.OutputTokens); err != nil {
+			return nil, err
+		}
+		rates, ok := pricing[s.Model]
+		if !ok {
+			rates = [2]float64{3.00, 15.00} // default to sonnet pricing
+		}
+		s.InputCost = float64(s.InputTokens) / 1_000_000 * rates[0]
+		s.OutputCost = float64(s.OutputTokens) / 1_000_000 * rates[1]
+		s.TotalCost = s.InputCost + s.OutputCost
+		summaries = append(summaries, s)
+	}
+	return summaries, rows.Err()
 }
 
 // List methods for team/module dashboards

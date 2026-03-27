@@ -1,0 +1,20 @@
+{{define "title"}}costs{{end}}
+
+{{define "content"}}
+<div class="page-header">
+    <h1>costs</h1>
+    <p>claude API usage and estimated costs</p>
+</div>
+
+<div hx-get="/costs/breakdown?period=30d" hx-trigger="load" hx-swap="innerHTML" id="costs-content">
+    <section>
+        <p>loading...</p>
+    </section>
+</div>
+
+<div style="display: flex; gap: 8px; margin-bottom: 16px;">
+    <button class="btn-ghost btn" hx-get="/costs/breakdown?period=7d" hx-target="#costs-content" hx-swap="innerHTML">7d</button>
+    <button class="btn-ghost btn" hx-get="/costs/breakdown?period=30d" hx-target="#costs-content" hx-swap="innerHTML">30d</button>
+    <button class="btn-ghost btn" hx-get="/costs/breakdown?period=90d" hx-target="#costs-content" hx-swap="innerHTML">90d</button>
+</div>
+{{end}}

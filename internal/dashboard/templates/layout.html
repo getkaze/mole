@@ -6,7 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#0a0a0a">
     <title>mole — {{template "title" .}}</title>
-    <link rel="icon" href="/static/favicon.ico">
+    <link rel="icon" type="image/png" href="/static/mole.png">
+    <link rel="apple-touch-icon" href="/static/mole.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Recursive:slnt,wght,CASL,MONO@-15..0,300..700,0..1,0..1&display=swap" rel="stylesheet">
@@ -63,6 +64,16 @@
                     Modules
                 </a>
             </div>
+
+            {{if .IsAdmin}}
+            <div class="sidebar-section">
+                <div class="sidebar-label">admin</div>
+                <a href="/costs" class="sidebar-item{{if eq .Page "costs"}} active{{end}}">
+                    <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+                    Costs
+                </a>
+            </div>
+            {{end}}
 
             <div class="sidebar-footer">
                 <div class="sidebar-version">mole</div>

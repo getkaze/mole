@@ -48,6 +48,14 @@ type Store interface {
 	ListActiveModules(ctx context.Context, from, to time.Time) ([]string, error)
 	ListTopIssuePatterns(ctx context.Context, from, to time.Time, limit int) ([]IssuePattern, error)
 
+	// Score recalculation
+	GetReviewIDsWithFalsePositives(ctx context.Context, from, to time.Time) ([]int64, error)
+	GetNonFalsePositiveSeverities(ctx context.Context, reviewID int64) ([]string, error)
+	UpdateReviewScore(ctx context.Context, reviewID int64, score int) error
+
+	// Costs
+	GetTokenUsageSummary(ctx context.Context, from, to time.Time, pricing map[string][2]float64) ([]TokenUsageSummary, error)
+
 	// Access Control
 	GetAccess(ctx context.Context, githubUser string) (*DashboardAccess, error)
 	UpsertAccess(ctx context.Context, access *DashboardAccess) error

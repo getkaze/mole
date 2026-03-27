@@ -1,0 +1,63 @@
+{{define "costs-breakdown.html"}}
+{{if .Costs}}
+<section>
+    <h2>summary</h2>
+    <div class="metrics-summary">
+        <div class="metric">
+            <div class="metric-value">${{printf "%.2f" .Costs.TotalCost}}</div>
+            <div class="metric-label">total cost</div>
+        </div>
+        <div class="metric">
+            <div class="metric-value">{{.Costs.TotalReviews}}</div>
+            <div class="metric-label">reviews</div>
+        </div>
+        <div class="metric">
+            <div class="metric-value">{{formatTokens .Costs.TotalInput}}</div>
+            <div class="metric-label">input tokens</div>
+        </div>
+        <div class="metric">
+            <div class="metric-value">{{formatTokens .Costs.TotalOutput}}</div>
+            <div class="metric-label">output tokens</div>
+        </div>
+    </div>
+</section>
+
+{{if .Costs.Models}}
+<section>
+    <h2>by model</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>model</th>
+                <th>reviews</th>
+                <th>input tokens</th>
+                <th>output tokens</th>
+                <th>input cost</th>
+                <th>output cost</th>
+                <th>total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Costs.Models}}
+            <tr>
+                <td>{{.Model}}</td>
+                <td>{{.Reviews}}</td>
+                <td>{{formatTokens .InputTokens}}</td>
+                <td>{{formatTokens .OutputTokens}}</td>
+                <td>${{.InputCost}}</td>
+                <td>${{.OutputCost}}</td>
+                <td>${{.TotalCost}}</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</section>
+{{end}}
+
+{{else}}
+<section>
+    <h2>summary</h2>
+    <p>no usage data yet. costs are tracked after reviews run.</p>
+</section>
+{{end}}
+{{end}}

@@ -18,10 +18,11 @@ var staticFS embed.FS
 
 // Config holds dashboard configuration.
 type Config struct {
-	GitHubClientID     string `yaml:"github_client_id"`
-	GitHubClientSecret string `yaml:"github_client_secret"`
-	SessionSecret      string `yaml:"session_secret"`
-	BaseURL            string `yaml:"base_url"` // e.g. http://localhost:8080
+	GitHubClientID     string                `yaml:"github_client_id"`
+	GitHubClientSecret string                `yaml:"github_client_secret"`
+	SessionSecret      string                `yaml:"session_secret"`
+	BaseURL            string                `yaml:"base_url"` // e.g. http://localhost:8080
+	Pricing            map[string][2]float64 // model -> [input, output] per 1M tokens
 }
 
 // Dashboard holds the handlers and dependencies.
@@ -36,7 +37,7 @@ func New(s store.Store, cfg Config) (*Dashboard, error) {
 	pages := make(map[string]*template.Template)
 
 	// Parse each page template with its own copy of the layout
-	pageFiles := []string{"me.html", "team.html", "modules.html", "module.html", "developers.html", "developer.html"}
+	pageFiles := []string{"me.html", "team.html", "modules.html", "module.html", "developers.html", "developer.html", "costs.html"}
 	for _, page := range pageFiles {
 		tmpl, err := template.ParseFS(templateFS,
 			"templates/layout.html",
@@ -56,7 +57,10 @@ func New(s store.Store, cfg Config) (*Dashboard, error) {
 	pages["login.html"] = login
 
 	// Fragment templates
-	fragments, err := template.ParseFS(templateFS, "templates/fragments/*.html")
+	funcMap := template.FuncMap{
+		"formatTokens": formatTokens,
+	}
+	fragments, err := template.New("").Funcs(funcMap).ParseFS(templateFS, "templates/fragments/*.html")
 	if err != nil {
 		return nil, fmt.Errorf("parsing fragments: %w", err)
 	}
@@ -103,4 +107,8 @@ func (d *Dashboard) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /team/acceptance", d.requireAuth(d.handleTeamAcceptance))
 	mux.HandleFunc("GET /team/distribution", d.requireAuth(d.handleTeamDistribution))
 	mux.HandleFunc("GET /team/training", d.requireAuth(d.handleTeamTraining))
+
+	// Costs (admin only)
+	mux.HandleFunc("GET /costs", d.requireAuth(d.handleCosts))
+	mux.HandleFunc("GET /costs/breakdown", d.requireAuth(d.handleCostsBreakdown))
 }

@@ -2,6 +2,7 @@ package dashboard
 
 import (
 	"encoding/json"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
@@ -12,10 +13,30 @@ import (
 type pageData struct {
 	User       string
 	Page       string
+	IsAdmin    bool
 	Modules    []moduleView
 	Module     moduleView
 	Developers []devOverview
 	Developer  string
+	Costs      *costsData
+}
+
+type costsData struct {
+	Models     []modelCostView
+	TotalCost  float64
+	TotalInput int64
+	TotalOutput int64
+	TotalReviews int
+}
+
+type modelCostView struct {
+	Model       string
+	Reviews     int
+	InputTokens int64
+	OutputTokens int64
+	InputCost   string
+	OutputCost  string
+	TotalCost   string
 }
 
 type devOverview struct {
@@ -34,6 +55,11 @@ type moduleView struct {
 	DebtItems   int
 }
 
+func (d *Dashboard) isAdmin(r *http.Request) bool {
+	access, _ := d.store.GetAccess(r.Context(), d.getUser(r))
+	return access != nil && access.Role == "admin"
+}
+
 func (d *Dashboard) handleRoot(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
 		http.NotFound(w, r)
@@ -43,12 +69,12 @@ func (d *Dashboard) handleRoot(w http.ResponseWriter, r *http.Request) {
 }
 
 func (d *Dashboard) handleMe(w http.ResponseWriter, r *http.Request) {
-	data := pageData{User: d.getUser(r), Page: "me"}
+	data := pageData{User: d.getUser(r), Page: "me", IsAdmin: d.isAdmin(r)}
 	d.renderPage(w, "me.html", data)
 }
 
 func (d *Dashboard) handleTeam(w http.ResponseWriter, r *http.Request) {
-	data := pageData{User: d.getUser(r), Page: "team"}
+	data := pageData{User: d.getUser(r), Page: "team", IsAdmin: d.isAdmin(r)}
 	d.renderPage(w, "team.html", data)
 }
 
@@ -71,7 +97,7 @@ func (d *Dashboard) handleModules(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	data := pageData{User: d.getUser(r), Page: "modules", Modules: modules}
+	data := pageData{User: d.getUser(r), Page: "modules", IsAdmin: d.isAdmin(r), Modules: modules}
 	d.renderPage(w, "modules.html", data)
 }
 
@@ -88,8 +114,9 @@ func (d *Dashboard) handleModule(w http.ResponseWriter, r *http.Request) {
 
 	latest := metrics[len(metrics)-1]
 	data := pageData{
-		User: d.getUser(r),
-		Page: "modules",
+		User:    d.getUser(r),
+		Page:    "modules",
+		IsAdmin: d.isAdmin(r),
 		Module: moduleView{
 			ModuleName:  latest.ModuleName,
 			HealthScore: latest.HealthScore,
@@ -162,7 +189,7 @@ func (d *Dashboard) handleDevelopers(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	data := pageData{User: user, Page: "developers", Developers: devs}
+	data := pageData{User: user, Page: "developers", IsAdmin: role == "admin", Developers: devs}
 	d.renderPage(w, "developers.html", data)
 }
 
@@ -194,7 +221,7 @@ func (d *Dashboard) handleDeveloper(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	data := pageData{User: user, Page: "developers", Developer: target}
+	data := pageData{User: user, Page: "developers", IsAdmin: role == "admin", Developer: target}
 	d.renderPage(w, "developer.html", data)
 }
 
@@ -435,6 +462,53 @@ func (d *Dashboard) handleTeamTraining(w http.ResponseWriter, r *http.Request) {
 	d.renderFragment(w, "training.html", map[string]any{"Topics": topics})
 }
 
+// Costs page (admin only)
+
+func (d *Dashboard) handleCosts(w http.ResponseWriter, r *http.Request) {
+	user := d.getUser(r)
+	if !d.isAdmin(r) {
+		http.Error(w, "access denied", http.StatusForbidden)
+		return
+	}
+	data := pageData{User: user, Page: "costs", IsAdmin: true}
+	d.renderPage(w, "costs.html", data)
+}
+
+func (d *Dashboard) handleCostsBreakdown(w http.ResponseWriter, r *http.Request) {
+	if !d.isAdmin(r) {
+		http.Error(w, "access denied", http.StatusForbidden)
+		return
+	}
+
+	now := time.Now()
+	days := parsePeriod(r.URL.Query().Get("period"), 30)
+	from := now.AddDate(0, 0, -days)
+
+	summaries, err := d.store.GetTokenUsageSummary(r.Context(), from, now, d.config.Pricing)
+	if err != nil {
+		slog.Error("failed to get token usage", "error", err)
+	}
+
+	costs := &costsData{}
+	for _, s := range summaries {
+		costs.Models = append(costs.Models, modelCostView{
+			Model:        s.Model,
+			Reviews:      s.Reviews,
+			InputTokens:  s.InputTokens,
+			OutputTokens: s.OutputTokens,
+			InputCost:    fmt.Sprintf("%.2f", s.InputCost),
+			OutputCost:   fmt.Sprintf("%.2f", s.OutputCost),
+			TotalCost:    fmt.Sprintf("%.2f", s.TotalCost),
+		})
+		costs.TotalCost += s.TotalCost
+		costs.TotalInput += s.InputTokens
+		costs.TotalOutput += s.OutputTokens
+		costs.TotalReviews += s.Reviews
+	}
+
+	d.renderFragment(w, "costs-breakdown.html", map[string]any{"Costs": costs})
+}
+
 func parseTopCategory(issuesByCategoryJSON string) string {
 	if issuesByCategoryJSON == "" {
 		return "-"
@@ -476,6 +550,16 @@ func (d *Dashboard) renderFragment(w http.ResponseWriter, name string, data any)
 		slog.Error("fragment render error", "name", name, "error", err)
 		http.Error(w, "internal error", http.StatusInternalServerError)
 	}
+}
+
+func formatTokens(n int64) string {
+	if n >= 1_000_000 {
+		return fmt.Sprintf("%.1fM", float64(n)/1_000_000)
+	}
+	if n >= 1_000 {
+		return fmt.Sprintf("%.1fK", float64(n)/1_000)
+	}
+	return fmt.Sprintf("%d", n)
 }
 
 func parsePeriod(s string, defaultDays int) int {

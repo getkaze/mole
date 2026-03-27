@@ -38,9 +38,20 @@ type GitHubConfig struct {
 }
 
 type LLMConfig struct {
-	APIKey         string `yaml:"api_key"`
-	ReviewModel    string `yaml:"review_model"`
-	DeepReviewModel string `yaml:"deep_review_model"`
+	APIKey          string            `yaml:"api_key"`
+	ReviewModel     string            `yaml:"review_model"`
+	DeepReviewModel string            `yaml:"deep_review_model"`
+	Pricing         map[string][2]float64 `yaml:"pricing"`
+}
+
+// DefaultPricing returns Anthropic's published pricing per 1M tokens [input, output].
+func DefaultPricing() map[string][2]float64 {
+	return map[string][2]float64{
+		"claude-sonnet-4-6":            {3.00, 15.00},
+		"claude-opus-4-6":              {15.00, 75.00},
+		"claude-sonnet-4-5-20250514":   {3.00, 15.00},
+		"claude-haiku-4-5-20251001":    {0.80, 4.00},
+	}
 }
 
 type MySQLConfig struct {
@@ -120,6 +131,9 @@ func (c *Config) applyDefaults() {
 	}
 	if c.LLM.DeepReviewModel == "" {
 		c.LLM.DeepReviewModel = "claude-opus-4-6"
+	}
+	if c.LLM.Pricing == nil {
+		c.LLM.Pricing = DefaultPricing()
 	}
 }
 

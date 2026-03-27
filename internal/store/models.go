@@ -105,6 +105,16 @@ type IssuePattern struct {
 	Count       int
 }
 
+type TokenUsageSummary struct {
+	Model        string
+	Reviews      int
+	InputTokens  int64
+	OutputTokens int64
+	InputCost    float64
+	OutputCost   float64
+	TotalCost    float64
+}
+
 type DashboardAccess struct {
 	ID                   int64
 	GitHubUser           string
