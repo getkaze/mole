@@ -4,7 +4,7 @@
 
   # mole
 
-  **AI-powered PR reviews + developer growth. Self-hosted. One binary.**
+  **AI-powered PR reviews + developer growth. Self-hosted. One binary or one container.**
 
   > Digs deep into code, elevates those who write it.
 
@@ -73,6 +73,14 @@ curl -fsSL https://getkaze.dev/mole/install.sh | sudo bash
 ```
 
 Or download the binary from [Releases](https://github.com/getkaze/mole/releases) and place it in your `PATH`.
+
+### Docker
+
+```bash
+docker pull ghcr.io/getkaze/mole:main
+```
+
+See [Docker](#docker) for full usage.
 
 ---
 
@@ -283,6 +291,10 @@ Every field can be overridden with environment variables using the `MOLE_` prefi
 | `MOLE_SERVER_PORT` | `server.port` |
 | `MOLE_WORKER_COUNT` | `worker.count` |
 | `MOLE_LOG_LEVEL` | `log.level` |
+| `MOLE_DASHBOARD_GITHUB_CLIENT_ID` | `dashboard.github_client_id` |
+| `MOLE_DASHBOARD_GITHUB_CLIENT_SECRET` | `dashboard.github_client_secret` |
+| `MOLE_DASHBOARD_SESSION_SECRET` | `dashboard.session_secret` |
+| `MOLE_DASHBOARD_BASE_URL` | `dashboard.base_url` |
 
 ---
 
@@ -313,23 +325,31 @@ Every field can be overridden with environment variables using the `MOLE_` prefi
 | Logging | log/slog (JSON structured) |
 | Metrics | Prometheus client_golang |
 | Migrations | golang-migrate (embedded SQL) |
+| Container | Docker (multi-arch, GHCR) |
 
 ---
 
 ## Docker
 
-```bash
-# Build the image
-docker build -t mole .
+A pre-built image is published to GHCR on every push to `main`:
 
-# Run with config file
+```bash
+docker pull ghcr.io/getkaze/mole:main
+```
+
+### Run with config file
+
+```bash
 docker run -d --name mole \
   -p 8080:8080 \
   -v /path/to/mole.yaml:/etc/mole/mole.yaml \
   -v /path/to/github-app.pem:/etc/mole/github-app.pem \
-  mole serve --config /etc/mole/mole.yaml
+  ghcr.io/getkaze/mole:main serve --config /etc/mole/mole.yaml
+```
 
-# Or run with environment variables
+### Run with environment variables
+
+```bash
 docker run -d --name mole \
   -p 8080:8080 \
   -v /path/to/github-app.pem:/etc/mole/github-app.pem \
@@ -339,7 +359,13 @@ docker run -d --name mole \
   -e MOLE_LLM_API_KEY=sk-ant-... \
   -e MOLE_MYSQL_HOST=mysql \
   -e MOLE_VALKEY_HOST=valkey \
-  mole
+  ghcr.io/getkaze/mole:main
+```
+
+### Build locally
+
+```bash
+docker build -t mole .
 ```
 
 ---
