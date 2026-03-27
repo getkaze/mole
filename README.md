@@ -16,7 +16,7 @@
 
   <br/>
 
-  [What is Mole](#what-is-mole) · [Prerequisites](#prerequisites) · [Install](#install) · [Setup](#setup) · [Usage](#usage) · [How It Works](#how-it-works) · [Context Files](#context-files) · [Dashboard](#dashboard) · [Config Reference](#config-reference) · [Stack](#stack) · [Build](#build)
+  [What is Mole](#what-is-mole) · [Prerequisites](#prerequisites) · [Install](#install) · [Setup](#setup) · [Usage](#usage) · [How It Works](#how-it-works) · [Context Files](#context-files) · [Dashboard](#dashboard) · [Config Reference](#config-reference) · [Stack](#stack) · [Docker](#docker) · [Build](#build)
 
 </div>
 
@@ -313,6 +313,34 @@ Every field can be overridden with environment variables using the `MOLE_` prefi
 | Logging | log/slog (JSON structured) |
 | Metrics | Prometheus client_golang |
 | Migrations | golang-migrate (embedded SQL) |
+
+---
+
+## Docker
+
+```bash
+# Build the image
+docker build -t mole .
+
+# Run with config file
+docker run -d --name mole \
+  -p 8080:8080 \
+  -v /path/to/mole.yaml:/etc/mole/mole.yaml \
+  -v /path/to/github-app.pem:/etc/mole/github-app.pem \
+  mole serve --config /etc/mole/mole.yaml
+
+# Or run with environment variables
+docker run -d --name mole \
+  -p 8080:8080 \
+  -v /path/to/github-app.pem:/etc/mole/github-app.pem \
+  -e MOLE_GITHUB_APP_ID=12345 \
+  -e MOLE_GITHUB_PRIVATE_KEY_PATH=/etc/mole/github-app.pem \
+  -e MOLE_GITHUB_WEBHOOK_SECRET=secret \
+  -e MOLE_LLM_API_KEY=sk-ant-... \
+  -e MOLE_MYSQL_HOST=mysql \
+  -e MOLE_VALKEY_HOST=valkey \
+  mole
+```
 
 ---
 
