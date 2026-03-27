@@ -52,8 +52,9 @@ No other self-hosted tool closes this loop.
 - **Individual view** — issue heat map, score trends, streaks, badges
 - **Team view** — issue distribution, quality trends, training suggestions
 - **Module view** — health score, tech debt tracking
+- **Costs view** — Claude API usage and estimated costs per model (admin only)
 - **Gamification** — streaks, badges, achievements
-- **Role-based access** — Dev, Tech Lead, Architect, Manager (manager sees less by design)
+- **Role-based access** — Dev, Tech Lead, Architect, Manager, Admin (manager sees less by design)
 
 ---
 
@@ -107,19 +108,13 @@ cp mole.yaml.example mole.yaml
 
 Fill in your GitHub App ID, private key path, webhook secret, Anthropic API key, and database credentials. All values can be overridden with `MOLE_` prefixed environment variables.
 
-### 3. Run migrations
-
-```bash
-mole migrate
-```
-
-### 4. Start
+### 3. Start
 
 ```bash
 mole serve
 ```
 
-Mole starts an HTTP server (default port 8080), a worker pool, and a metrics aggregator.
+Mole starts an HTTP server (default port 8080), a worker pool, and a metrics aggregator. Database migrations run automatically on startup.
 
 ---
 
@@ -143,6 +138,13 @@ mole review owner/repo#123
 mole review owner/repo#123 --deep
 mole review owner/repo#123 --install-id 12345
 
+# Sync reactions, recalculate scores, and update metrics
+mole sync
+
+# Manage dashboard roles
+mole admin set-role <user> <role>
+mole admin list
+
 # Version
 mole version
 ```
@@ -158,6 +160,20 @@ Comment on any PR to trigger Mole:
 | `/mole ignore` | Skip all future reviews for this PR |
 
 PRs are also reviewed automatically when opened.
+
+### Reaction Sync
+
+Developers can react to Mole's inline comments with :+1: (confirm issue) or :-1: (false positive). Mole syncs reactions automatically every hour, but you can force an immediate sync:
+
+```bash
+mole sync
+```
+
+This command:
+1. Polls GitHub for reactions on recent review comments
+2. Marks issues as `confirmed` or `false_positive` based on reactions
+3. Recalculates PR scores excluding false positives
+4. Updates developer and module metrics (false positives are no longer counted)
 
 ---
 
@@ -219,12 +235,13 @@ Create a GitHub OAuth App (separate from the GitHub App) at [github.com/settings
 
 ### Access Roles
 
-| Role | Own Data | Team Average | Individual Others | Modules |
-|------|----------|-------------|-------------------|---------|
-| Dev | Yes | Yes (anonymous) | No | Yes |
-| Tech Lead | Yes | Yes | Yes (opt-in) | Yes |
-| Architect | Yes | Yes | Yes (opt-in) | Yes |
-| Manager | No | Yes | No | Yes |
+| Role | Own Data | Team Average | Individual Others | Modules | Costs |
+|------|----------|-------------|-------------------|---------|-------|
+| Dev | Yes | Yes (anonymous) | No | Yes | No |
+| Tech Lead | Yes | Yes | Yes (opt-in) | Yes | No |
+| Architect | Yes | Yes | Yes (opt-in) | Yes | No |
+| Manager | No | Yes | No | Yes | No |
+| Admin | Yes | Yes | Yes | Yes | Yes |
 
 > Manager sees less than Tech Lead by design — this tool is for growth, not HR evaluation.
 
@@ -242,6 +259,11 @@ llm:
   api_key: "sk-ant-..."                  # Anthropic API key
   review_model: "claude-sonnet-4-6"      # Standard review model
   deep_review_model: "claude-opus-4-6"   # Deep review model
+  # Pricing per 1M tokens [input, output] — for the Costs dashboard
+  # Defaults to Anthropic's published pricing if omitted
+  pricing:
+    claude-sonnet-4-6: [3.00, 15.00]
+    claude-opus-4-6: [15.00, 75.00]
 
 mysql:
   host: localhost
@@ -308,6 +330,7 @@ Every field can be overridden with environment variables using the `MOLE_` prefi
 | `GET` | `/me` | Individual dashboard |
 | `GET` | `/team` | Team dashboard |
 | `GET` | `/modules` | Module dashboard |
+| `GET` | `/costs` | Cost dashboard (admin only) |
 
 ---
 
