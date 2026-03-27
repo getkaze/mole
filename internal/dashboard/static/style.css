@@ -158,10 +158,10 @@ a:hover { opacity: 0.85; }
 }
 
 .topbar-logo-icon {
-    width: 24px;
-    height: 24px;
+    width: 32px;
+    height: 32px;
     flex-shrink: 0;
-    border-radius: 4px;
+    border-radius: 6px;
 }
 
 .topbar-wordmark {
