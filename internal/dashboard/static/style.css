@@ -158,10 +158,10 @@ a:hover { opacity: 0.85; }
 }
 
 .topbar-logo-icon {
-    width: 20px;
-    height: 20px;
-    color: var(--accent);
+    width: 24px;
+    height: 24px;
     flex-shrink: 0;
+    border-radius: 4px;
 }
 
 .topbar-wordmark {
@@ -647,9 +647,11 @@ section p:only-child {
     max-width: 360px;
     width: 100%;
 }
-.login-logo {
-    font-size: 48px;
-    margin-bottom: 8px;
+.login-logo-img {
+    width: 64px;
+    height: 64px;
+    border-radius: 12px;
+    margin-bottom: 12px;
 }
 .login-card h1 {
     font-family: var(--mono);
