@@ -11,6 +11,7 @@ import (
 
 type pageData struct {
 	User       string
+	Page       string
 	Modules    []moduleView
 	Module     moduleView
 	Developers []devOverview
@@ -42,12 +43,12 @@ func (d *Dashboard) handleRoot(w http.ResponseWriter, r *http.Request) {
 }
 
 func (d *Dashboard) handleMe(w http.ResponseWriter, r *http.Request) {
-	data := pageData{User: d.getUser(r)}
+	data := pageData{User: d.getUser(r), Page: "me"}
 	d.renderPage(w, "me.html", data)
 }
 
 func (d *Dashboard) handleTeam(w http.ResponseWriter, r *http.Request) {
-	data := pageData{User: d.getUser(r)}
+	data := pageData{User: d.getUser(r), Page: "team"}
 	d.renderPage(w, "team.html", data)
 }
 
@@ -70,7 +71,7 @@ func (d *Dashboard) handleModules(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	data := pageData{User: d.getUser(r), Modules: modules}
+	data := pageData{User: d.getUser(r), Page: "modules", Modules: modules}
 	d.renderPage(w, "modules.html", data)
 }
 
@@ -88,6 +89,7 @@ func (d *Dashboard) handleModule(w http.ResponseWriter, r *http.Request) {
 	latest := metrics[len(metrics)-1]
 	data := pageData{
 		User: d.getUser(r),
+		Page: "modules",
 		Module: moduleView{
 			ModuleName:  latest.ModuleName,
 			HealthScore: latest.HealthScore,
@@ -160,7 +162,7 @@ func (d *Dashboard) handleDevelopers(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	data := pageData{User: user, Developers: devs}
+	data := pageData{User: user, Page: "developers", Developers: devs}
 	d.renderPage(w, "developers.html", data)
 }
 
@@ -192,7 +194,7 @@ func (d *Dashboard) handleDeveloper(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	data := pageData{User: user, Developer: target}
+	data := pageData{User: user, Page: "developers", Developer: target}
 	d.renderPage(w, "developer.html", data)
 }
 
