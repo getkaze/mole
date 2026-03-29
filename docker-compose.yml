@@ -1,0 +1,55 @@
+services:
+
+  mole:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./mole.yaml:/etc/mole/mole.yaml:ro
+      - ./github-app.pem:/etc/mole/github-app.pem:ro
+    command: serve --config /etc/mole/mole.yaml
+    environment:
+      MOLE_MYSQL_HOST: mysql
+      MOLE_MYSQL_USER: mole
+      MOLE_MYSQL_PASSWORD: mole
+      MOLE_MYSQL_DATABASE: mole
+      MOLE_VALKEY_HOST: valkey
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+
+  mysql:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: mole
+      MYSQL_USER: mole
+      MYSQL_PASSWORD: mole
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "mole", "-pmole"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "3306:3306"
+
+  valkey:
+    image: valkey/valkey:7-alpine
+    volumes:
+      - valkey_data:/data
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    ports:
+      - "6379:6379"
+
+volumes:
+  mysql_data:
+  valkey_data:

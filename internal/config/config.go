@@ -25,6 +25,7 @@ type DashboardConfig struct {
 	GitHubClientSecret string `yaml:"github_client_secret"`
 	SessionSecret      string `yaml:"session_secret"`
 	BaseURL            string `yaml:"base_url"`
+	AllowedOrg         string `yaml:"allowed_org"`
 }
 
 func (c *DashboardConfig) Enabled() bool {
@@ -207,6 +208,9 @@ func (c *Config) applyEnvOverrides() {
 	}
 	if v := os.Getenv("MOLE_DASHBOARD_BASE_URL"); v != "" {
 		c.Dashboard.BaseURL = v
+	}
+	if v := os.Getenv("MOLE_DASHBOARD_ALLOWED_ORG"); v != "" {
+		c.Dashboard.AllowedOrg = v
 	}
 }
 

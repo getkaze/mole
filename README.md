@@ -1,7 +1,7 @@
 <div align="center">
 
-  <img src="mole.png" alt="mole" width="96" height="96"/>
-
+  <img src="mole-favicon.png" alt="mole" width="100" height="150"/>
+  
   # mole
 
   **AI-powered PR reviews + developer growth. Self-hosted. One binary or one container.**
@@ -26,13 +26,11 @@
 
 **Mole** (the animal that digs deep, finding what others miss) is an open-source, self-hosted AI code review and developer growth platform. Install it as a GitHub App, point it at your repos, and every PR gets an automated review powered by Claude — with personality, formal issue taxonomy, quality scoring, and growth tracking.
 
-What sets Mole apart from competitors (CodeRabbit, Kodus, Greptile):
+The full loop, self-hosted:
 
 ```
 Review PR → Classify issues → Track patterns → Surface insights → Grow developers
 ```
-
-No other self-hosted tool closes this loop.
 
 ### PR Review Features
 
@@ -51,10 +49,12 @@ No other self-hosted tool closes this loop.
 
 - **Individual view** — issue heat map, score trends, streaks, badges
 - **Team view** — issue distribution, quality trends, training suggestions
-- **Module view** — health score, tech debt tracking
+- **Module view** — health score, tech debt tracking, grouped by repository
 - **Costs view** — Claude API usage and estimated costs per model (admin only)
 - **Gamification** — streaks, badges, achievements
-- **Role-based access** — Dev, Tech Lead, Architect, Manager, Admin (manager sees less by design)
+- **About page** — application info and version
+- **Role-based access** — Dev, Tech Lead, Manager, Admin
+- **i18n** — Portuguese (default) and English, switchable via flag selector
 
 ---
 
@@ -229,9 +229,23 @@ dashboard:
   github_client_secret: "your-oauth-app-client-secret"
   session_secret: "a-random-32-char-secret"
   base_url: "http://localhost:8080"
+  # Restrict access to members of a specific GitHub org (recommended)
+  allowed_org: "your-github-org"
 ```
 
 Create a GitHub OAuth App (separate from the GitHub App) at [github.com/settings/developers](https://github.com/settings/developers) with callback URL `http://your-server/auth/callback`.
+
+### Access Control
+
+By default, any authenticated GitHub user can log in. Set `allowed_org` to restrict access to members of a specific GitHub organization — only users who belong to that org will be allowed in.
+
+```yaml
+# Only members of "acme-corp" can access the dashboard
+dashboard:
+  allowed_org: "acme-corp"
+```
+
+Can also be set via the `MOLE_DASHBOARD_ALLOWED_ORG` environment variable.
 
 ### Access Roles
 
@@ -291,6 +305,7 @@ dashboard:
   github_client_secret: ""
   session_secret: ""
   base_url: "http://localhost:8080"
+  allowed_org: ""                        # Restrict to org members (leave empty to allow all)
 ```
 
 Every field can be overridden with environment variables using the `MOLE_` prefix:
@@ -317,6 +332,7 @@ Every field can be overridden with environment variables using the `MOLE_` prefi
 | `MOLE_DASHBOARD_GITHUB_CLIENT_SECRET` | `dashboard.github_client_secret` |
 | `MOLE_DASHBOARD_SESSION_SECRET` | `dashboard.session_secret` |
 | `MOLE_DASHBOARD_BASE_URL` | `dashboard.base_url` |
+| `MOLE_DASHBOARD_ALLOWED_ORG` | `dashboard.allowed_org` |
 
 ---
 

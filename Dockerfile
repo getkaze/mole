@@ -12,4 +12,4 @@ FROM alpine:3.21
 RUN apk add --no-cache ca-certificates tzdata
 COPY --from=build /mole /usr/local/bin/mole
 ENTRYPOINT ["mole"]
-CMD ["serve"]
+CMD ["serve", "--config", "/etc/mole/mole.yaml"]

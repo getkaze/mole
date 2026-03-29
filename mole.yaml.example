@@ -14,6 +14,11 @@ llm:
   # Models (defaults shown)
   review_model: "claude-sonnet-4-6"
   deep_review_model: "claude-opus-4-6"
+  # Pricing per 1M tokens: [input, output]
+  # Used by the costs dashboard to estimate spending.
+  pricing:
+    claude-sonnet-4-6: [3.00, 15.00]
+    claude-opus-4-6: [15.00, 75.00]
 
 mysql:
   host: localhost
@@ -37,9 +42,14 @@ log:
   # debug | info | warn | error
   level: info
 
-# Dashboard (optional — omit to disable)
-# dashboard:
-#   github_client_id: "your-oauth-app-client-id"
-#   github_client_secret: "your-oauth-app-client-secret"
-#   session_secret: "a-random-32-char-secret-here!!!"
-#   base_url: "http://localhost:8080"
+# Dashboard
+dashboard:
+  github_client_id: "your-oauth-app-client-id"
+  github_client_secret: "your-oauth-app-client-secret"
+  session_secret: "a-random-32-char-secret-here!!!"
+  base_url: "http://localhost:8080"
+  # Restrict access to members of a specific GitHub organization.
+  # Only users who belong to this org will be allowed to log in.
+  # Leave unset (or empty) to allow any authenticated GitHub user.
+  # Env override: MOLE_DASHBOARD_ALLOWED_ORG
+  allowed_org: "your-github-org"
