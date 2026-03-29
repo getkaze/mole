@@ -124,12 +124,12 @@ func TestLoginPage_UnauthenticatedAccess(t *testing.T) {
 	handler := d.requireAuth(d.handleMe)
 	handler(w, req)
 
-	// Should render login page (not redirect)
-	if w.Code != http.StatusOK {
-		t.Errorf("status = %d, want 200 (login page)", w.Code)
+	// Should redirect to login page
+	if w.Code != http.StatusTemporaryRedirect {
+		t.Errorf("status = %d, want 307 (redirect to login)", w.Code)
 	}
-	if body := w.Body.String(); len(body) == 0 {
-		t.Error("should render login page content")
+	if loc := w.Header().Get("Location"); loc != "/auth/login" {
+		t.Errorf("redirect location = %q, want /auth/login", loc)
 	}
 }
 
