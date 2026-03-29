@@ -23,6 +23,7 @@ import (
 	"github.com/getkaze/mole/internal/review"
 	"github.com/getkaze/mole/internal/server"
 	"github.com/getkaze/mole/internal/store"
+	"github.com/getkaze/mole/internal/updater"
 	"github.com/getkaze/mole/internal/worker"
 )
 
@@ -49,6 +50,7 @@ func main() {
 		initCmd(),
 		adminCmd(),
 		syncCmd(),
+		updateCmd(),
 	)
 
 	if err := root.Execute(); err != nil {
@@ -369,6 +371,42 @@ func parsePRRef(ref string) (owner, repo string, pr int, err error) {
 	}
 
 	return repoParts[0], repoParts[1], pr, nil
+}
+
+func updateCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "update",
+		Short: "Update mole to the latest version",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			fmt.Println("==> checking for updates...")
+
+			result, err := updater.Check(version)
+			if err != nil {
+				return fmt.Errorf("check failed: %w", err)
+			}
+
+			if !result.Available {
+				fmt.Printf("  ✓ already up to date (%s)\n", version)
+				return nil
+			}
+
+			fmt.Printf("==> new version available: %s (current: %s)\n", result.Latest, result.Current)
+			fmt.Printf("==> downloading mole %s...\n", result.Latest)
+
+			tmpPath, err := updater.Download(result.Latest)
+			if err != nil {
+				return fmt.Errorf("download failed: %w", err)
+			}
+			defer os.Remove(tmpPath)
+
+			if err := updater.Replace(tmpPath); err != nil {
+				return fmt.Errorf("replace failed: %w\n\nhint: try running with sudo", err)
+			}
+
+			fmt.Printf("  ✓ updated to %s\n", result.Latest)
+			return nil
+		},
+	}
 }
 
 func setupLogging(level string) {

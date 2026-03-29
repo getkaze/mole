@@ -145,6 +145,9 @@ mole sync
 mole admin set-role <user> <role>
 mole admin list
 
+# Update to latest version
+mole update
+
 # Version
 mole version
 ```
