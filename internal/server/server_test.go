@@ -70,7 +70,7 @@ func (m *mockStoreWithPing) GetReviewsWithPendingIssues(ctx context.Context, fro
 func (m *mockStoreWithPing) GetIssuesByDeveloper(ctx context.Context, dev string, from, to time.Time) ([]store.Issue, error) {
 	return nil, nil
 }
-func (m *mockStoreWithPing) GetIssuesByModule(ctx context.Context, mod string, from, to time.Time) ([]store.Issue, error) {
+func (m *mockStoreWithPing) GetIssuesByModule(ctx context.Context, repo, mod string, from, to time.Time) ([]store.Issue, error) {
 	return nil, nil
 }
 func (m *mockStoreWithPing) UpsertInstallation(ctx context.Context, inst *store.Installation) error {
@@ -100,7 +100,7 @@ func (m *mockStoreWithPing) ListAllDevMetrics(ctx context.Context, pt string, fr
 func (m *mockStoreWithPing) UpsertModuleMetrics(ctx context.Context, met *store.ModuleMetrics) error {
 	return nil
 }
-func (m *mockStoreWithPing) GetModuleMetrics(ctx context.Context, mod, pt string, from, to time.Time) ([]store.ModuleMetrics, error) {
+func (m *mockStoreWithPing) GetModuleMetrics(ctx context.Context, repo, mod, pt string, from, to time.Time) ([]store.ModuleMetrics, error) {
 	return nil, nil
 }
 func (m *mockStoreWithPing) ListAllModuleMetrics(ctx context.Context, pt string, from, to time.Time) ([]store.ModuleMetrics, error) {
@@ -112,7 +112,7 @@ func (m *mockStoreWithPing) GetAvgScoreByDeveloper(ctx context.Context, dev stri
 func (m *mockStoreWithPing) ListActiveDevelopers(ctx context.Context, from, to time.Time) ([]string, error) {
 	return nil, nil
 }
-func (m *mockStoreWithPing) ListActiveModules(ctx context.Context, from, to time.Time) ([]string, error) {
+func (m *mockStoreWithPing) ListActiveModules(ctx context.Context, from, to time.Time) ([]store.RepoModule, error) {
 	return nil, nil
 }
 func (m *mockStoreWithPing) ListTopIssuePatterns(ctx context.Context, from, to time.Time, limit int) ([]store.IssuePattern, error) {

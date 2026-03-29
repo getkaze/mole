@@ -42,7 +42,7 @@ func (m *mockStore) GetReviewsWithPendingIssues(ctx context.Context, from, to ti
 func (m *mockStore) GetIssuesByDeveloper(ctx context.Context, dev string, from, to time.Time) ([]store.Issue, error) {
 	return nil, nil
 }
-func (m *mockStore) GetIssuesByModule(ctx context.Context, mod string, from, to time.Time) ([]store.Issue, error) {
+func (m *mockStore) GetIssuesByModule(ctx context.Context, repo, mod string, from, to time.Time) ([]store.Issue, error) {
 	return nil, nil
 }
 func (m *mockStore) UpsertInstallation(ctx context.Context, inst *store.Installation) error { return nil }
@@ -57,7 +57,7 @@ func (m *mockStore) GetDevMetrics(ctx context.Context, dev, pt string, from, to 
 }
 func (m *mockStore) GetDevStreak(ctx context.Context, dev string) (int, error) { return 0, nil }
 func (m *mockStore) UpsertModuleMetrics(ctx context.Context, met *store.ModuleMetrics) error { return nil }
-func (m *mockStore) GetModuleMetrics(ctx context.Context, mod, pt string, from, to time.Time) ([]store.ModuleMetrics, error) {
+func (m *mockStore) GetModuleMetrics(ctx context.Context, repo, mod, pt string, from, to time.Time) ([]store.ModuleMetrics, error) {
 	return nil, nil
 }
 func (m *mockStore) GetAccess(ctx context.Context, user string) (*store.DashboardAccess, error) {
@@ -76,7 +76,7 @@ func (m *mockStore) GetAvgScoreByDeveloper(ctx context.Context, dev string, from
 func (m *mockStore) ListActiveDevelopers(ctx context.Context, from, to time.Time) ([]string, error) {
 	return nil, nil
 }
-func (m *mockStore) ListActiveModules(ctx context.Context, from, to time.Time) ([]string, error) {
+func (m *mockStore) ListActiveModules(ctx context.Context, from, to time.Time) ([]store.RepoModule, error) {
 	return nil, nil
 }
 func (m *mockStore) ListTopIssuePatterns(ctx context.Context, from, to time.Time, limit int) ([]store.IssuePattern, error) {

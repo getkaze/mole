@@ -88,6 +88,7 @@ type DeveloperMetrics struct {
 
 type ModuleMetrics struct {
 	ID          int64
+	Repo        string
 	ModuleName  string
 	PeriodType  string // weekly, monthly
 	PeriodStart time.Time
@@ -97,6 +98,12 @@ type ModuleMetrics struct {
 	TotalIssues int
 	DebtItems   int
 	CreatedAt   time.Time
+}
+
+// RepoModule identifies a module within a specific repository.
+type RepoModule struct {
+	Repo       string
+	ModuleName string
 }
 
 type IssuePattern struct {
@@ -118,7 +125,7 @@ type TokenUsageSummary struct {
 type DashboardAccess struct {
 	ID                   int64
 	GitHubUser           string
-	Role                 string // dev, tech_lead, architect, manager
+	Role                 string // dev, tech_lead, manager, admin
 	IndividualVisibility bool
 	CreatedAt            time.Time
 }

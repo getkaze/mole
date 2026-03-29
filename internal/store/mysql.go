@@ -288,11 +288,13 @@ func (s *MySQLStore) GetReviewsWithPendingIssues(ctx context.Context, from, to t
 	return reviews, rows.Err()
 }
 
-func (s *MySQLStore) GetIssuesByModule(ctx context.Context, module string, from, to time.Time) ([]Issue, error) {
+func (s *MySQLStore) GetIssuesByModule(ctx context.Context, repo, module string, from, to time.Time) ([]Issue, error) {
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT id, review_id, pr_author, category, subcategory, severity, file_path, line_number, description, suggestion, module_name, validation, created_at
-		 FROM issues WHERE module_name = ? AND created_at BETWEEN ? AND ? ORDER BY created_at`,
-		module, from, to,
+		`SELECT i.id, i.review_id, i.pr_author, i.category, i.subcategory, i.severity, i.file_path, i.line_number, i.description, i.suggestion, i.module_name, i.validation, i.created_at
+		 FROM issues i
+		 JOIN reviews r ON r.id = i.review_id
+		 WHERE r.repo = ? AND i.module_name = ? AND i.created_at BETWEEN ? AND ? ORDER BY i.created_at`,
+		repo, module, from, to,
 	)
 	if err != nil {
 		return nil, err
@@ -435,26 +437,26 @@ func (s *MySQLStore) GetDevStreak(ctx context.Context, developer string) (int, e
 
 func (s *MySQLStore) UpsertModuleMetrics(ctx context.Context, m *ModuleMetrics) error {
 	_, err := s.db.ExecContext(ctx,
-		`INSERT INTO module_metrics (module_name, period_type, period_start, period_end, avg_score, health_score, total_issues, debt_items)
-		 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+		`INSERT INTO module_metrics (repo, module_name, period_type, period_start, period_end, avg_score, health_score, total_issues, debt_items)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 		 ON DUPLICATE KEY UPDATE
 		   avg_score = VALUES(avg_score),
 		   health_score = VALUES(health_score),
 		   total_issues = VALUES(total_issues),
 		   debt_items = VALUES(debt_items)`,
-		m.ModuleName, m.PeriodType, m.PeriodStart, m.PeriodEnd,
+		m.Repo, m.ModuleName, m.PeriodType, m.PeriodStart, m.PeriodEnd,
 		m.AvgScore, m.HealthScore, m.TotalIssues, m.DebtItems,
 	)
 	return err
 }
 
-func (s *MySQLStore) GetModuleMetrics(ctx context.Context, module string, periodType string, from, to time.Time) ([]ModuleMetrics, error) {
+func (s *MySQLStore) GetModuleMetrics(ctx context.Context, repo, module string, periodType string, from, to time.Time) ([]ModuleMetrics, error) {
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT id, module_name, period_type, period_start, period_end, avg_score, health_score, total_issues, debt_items, created_at
+		`SELECT id, repo, module_name, period_type, period_start, period_end, avg_score, health_score, total_issues, debt_items, created_at
 		 FROM module_metrics
-		 WHERE module_name = ? AND period_type = ? AND period_start BETWEEN ? AND ?
+		 WHERE repo = ? AND module_name = ? AND period_type = ? AND period_start BETWEEN ? AND ?
 		 ORDER BY period_start`,
-		module, periodType, from, to,
+		repo, module, periodType, from, to,
 	)
 	if err != nil {
 		return nil, err
@@ -465,7 +467,7 @@ func (s *MySQLStore) GetModuleMetrics(ctx context.Context, module string, period
 	for rows.Next() {
 		var m ModuleMetrics
 		if err := rows.Scan(
-			&m.ID, &m.ModuleName, &m.PeriodType, &m.PeriodStart, &m.PeriodEnd,
+			&m.ID, &m.Repo, &m.ModuleName, &m.PeriodType, &m.PeriodStart, &m.PeriodEnd,
 			&m.AvgScore, &m.HealthScore, &m.TotalIssues, &m.DebtItems, &m.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -588,6 +590,17 @@ func (s *MySQLStore) GetTokenUsageSummary(ctx context.Context, from, to time.Tim
 	return summaries, rows.Err()
 }
 
+func (s *MySQLStore) GetUniquePRCount(ctx context.Context, from, to time.Time) (int, error) {
+	var count int
+	err := s.db.QueryRowContext(ctx,
+		`SELECT COUNT(DISTINCT CONCAT(repo, '#', pr_number))
+		 FROM reviews
+		 WHERE status = 'success' AND created_at BETWEEN ? AND ?`,
+		from, to,
+	).Scan(&count)
+	return count, err
+}
+
 // List methods for team/module dashboards
 
 func (s *MySQLStore) ListAllDevMetrics(ctx context.Context, periodType string, from, to time.Time) ([]DeveloperMetrics, error) {
@@ -624,10 +637,10 @@ func (s *MySQLStore) ListAllDevMetrics(ctx context.Context, periodType string, f
 
 func (s *MySQLStore) ListAllModuleMetrics(ctx context.Context, periodType string, from, to time.Time) ([]ModuleMetrics, error) {
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT id, module_name, period_type, period_start, period_end, avg_score, health_score, total_issues, debt_items, created_at
+		`SELECT id, repo, module_name, period_type, period_start, period_end, avg_score, health_score, total_issues, debt_items, created_at
 		 FROM module_metrics
 		 WHERE period_type = ? AND period_start BETWEEN ? AND ?
-		 ORDER BY module_name`,
+		 ORDER BY repo, module_name`,
 		periodType, from, to,
 	)
 	if err != nil {
@@ -639,7 +652,7 @@ func (s *MySQLStore) ListAllModuleMetrics(ctx context.Context, periodType string
 	for rows.Next() {
 		var m ModuleMetrics
 		if err := rows.Scan(
-			&m.ID, &m.ModuleName, &m.PeriodType, &m.PeriodStart, &m.PeriodEnd,
+			&m.ID, &m.Repo, &m.ModuleName, &m.PeriodType, &m.PeriodStart, &m.PeriodEnd,
 			&m.AvgScore, &m.HealthScore, &m.TotalIssues, &m.DebtItems, &m.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -670,9 +683,13 @@ func (s *MySQLStore) ListActiveDevelopers(ctx context.Context, from, to time.Tim
 	return devs, rows.Err()
 }
 
-func (s *MySQLStore) ListActiveModules(ctx context.Context, from, to time.Time) ([]string, error) {
+func (s *MySQLStore) ListActiveModules(ctx context.Context, from, to time.Time) ([]RepoModule, error) {
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT DISTINCT module_name FROM issues WHERE module_name IS NOT NULL AND module_name != '' AND created_at BETWEEN ? AND ? ORDER BY module_name`,
+		`SELECT DISTINCT r.repo, i.module_name
+		 FROM issues i
+		 JOIN reviews r ON r.id = i.review_id
+		 WHERE i.module_name IS NOT NULL AND i.module_name != '' AND i.created_at BETWEEN ? AND ?
+		 ORDER BY r.repo, i.module_name`,
 		from, to,
 	)
 	if err != nil {
@@ -680,13 +697,13 @@ func (s *MySQLStore) ListActiveModules(ctx context.Context, from, to time.Time) 
 	}
 	defer rows.Close()
 
-	var mods []string
+	var mods []RepoModule
 	for rows.Next() {
-		var mod string
-		if err := rows.Scan(&mod); err != nil {
+		var m RepoModule
+		if err := rows.Scan(&m.Repo, &m.ModuleName); err != nil {
 			return nil, err
 		}
-		mods = append(mods, mod)
+		mods = append(mods, m)
 	}
 	return mods, rows.Err()
 }

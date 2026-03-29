@@ -17,7 +17,7 @@ type Store interface {
 	ValidateIssueByCommentID(ctx context.Context, githubCommentID int64, validation string, validatedBy string) error
 	GetIssuesByPR(ctx context.Context, repo string, prNumber int) ([]Issue, error)
 	GetIssuesByDeveloper(ctx context.Context, developer string, from, to time.Time) ([]Issue, error)
-	GetIssuesByModule(ctx context.Context, module string, from, to time.Time) ([]Issue, error)
+	GetIssuesByModule(ctx context.Context, repo, module string, from, to time.Time) ([]Issue, error)
 	GetAcceptanceRate(ctx context.Context, developer string, from, to time.Time) (*AcceptanceRate, error)
 	GetOverallAcceptanceRate(ctx context.Context, from, to time.Time) (*AcceptanceRate, error)
 	GetPendingValidationIssues(ctx context.Context, from, to time.Time) ([]Issue, error)
@@ -37,7 +37,7 @@ type Store interface {
 
 	// Module Metrics
 	UpsertModuleMetrics(ctx context.Context, m *ModuleMetrics) error
-	GetModuleMetrics(ctx context.Context, module string, periodType string, from, to time.Time) ([]ModuleMetrics, error)
+	GetModuleMetrics(ctx context.Context, repo, module string, periodType string, from, to time.Time) ([]ModuleMetrics, error)
 	ListAllModuleMetrics(ctx context.Context, periodType string, from, to time.Time) ([]ModuleMetrics, error)
 
 	// Reviews (aggregated)
@@ -45,7 +45,7 @@ type Store interface {
 
 	// Issues (aggregated)
 	ListActiveDevelopers(ctx context.Context, from, to time.Time) ([]string, error)
-	ListActiveModules(ctx context.Context, from, to time.Time) ([]string, error)
+	ListActiveModules(ctx context.Context, from, to time.Time) ([]RepoModule, error)
 	ListTopIssuePatterns(ctx context.Context, from, to time.Time, limit int) ([]IssuePattern, error)
 
 	// Score recalculation
@@ -55,6 +55,7 @@ type Store interface {
 
 	// Costs
 	GetTokenUsageSummary(ctx context.Context, from, to time.Time, pricing map[string][2]float64) ([]TokenUsageSummary, error)
+	GetUniquePRCount(ctx context.Context, from, to time.Time) (int, error)
 
 	// Access Control
 	GetAccess(ctx context.Context, githubUser string) (*DashboardAccess, error)

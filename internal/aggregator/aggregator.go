@@ -190,9 +190,9 @@ func (a *Aggregator) aggregateModuleMetrics(ctx context.Context, periodType stri
 	}
 
 	for _, mod := range modules {
-		allIssues, err := a.store.GetIssuesByModule(ctx, mod, from, to)
+		allIssues, err := a.store.GetIssuesByModule(ctx, mod.Repo, mod.ModuleName, from, to)
 		if err != nil {
-			slog.Error("failed to get issues for module", "module", mod, "error", err)
+			slog.Error("failed to get issues for module", "repo", mod.Repo, "module", mod.ModuleName, "error", err)
 			continue
 		}
 
@@ -213,7 +213,8 @@ func (a *Aggregator) aggregateModuleMetrics(ctx context.Context, periodType stri
 		}
 
 		m := &store.ModuleMetrics{
-			ModuleName:  mod,
+			Repo:        mod.Repo,
+			ModuleName:  mod.ModuleName,
 			PeriodType:  periodType,
 			PeriodStart: from,
 			PeriodEnd:   to,
@@ -224,7 +225,7 @@ func (a *Aggregator) aggregateModuleMetrics(ctx context.Context, periodType stri
 		}
 
 		if err := a.store.UpsertModuleMetrics(ctx, m); err != nil {
-			slog.Error("failed to upsert module metrics", "module", mod, "error", err)
+			slog.Error("failed to upsert module metrics", "repo", mod.Repo, "module", mod.ModuleName, "error", err)
 		}
 	}
 }
@@ -233,7 +234,7 @@ func (a *Aggregator) getActiveDevelopers(ctx context.Context, from, to time.Time
 	return a.store.ListActiveDevelopers(ctx, from, to)
 }
 
-func (a *Aggregator) getActiveModules(ctx context.Context, from, to time.Time) ([]string, error) {
+func (a *Aggregator) getActiveModules(ctx context.Context, from, to time.Time) ([]store.RepoModule, error) {
 	return a.store.ListActiveModules(ctx, from, to)
 }
 
