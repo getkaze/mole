@@ -1,40 +1,40 @@
 {{define "layout"}}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#0a0a0a">
+    <meta name="theme-color" content="#faf9f6">
     <title>mole — {{template "title" .}}</title>
-    <link rel="icon" type="image/png" href="/static/mole.png">
-    <link rel="apple-touch-icon" href="/static/mole.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/mole-favicon.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="/static/mole-favicon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/mole-favicon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Recursive:slnt,wght,CASL,MONO@-15..0,300..700,0..1,0..1&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
     <script src="/static/htmx.min.js"></script>
 </head>
-<body>
+<body data-page-title="{{template "title" .}}">
 
     <!-- Topbar -->
     <div class="topbar">
         <a href="/me" class="topbar-logo">
-            <img src="/static/mole.png" alt="mole" class="topbar-logo-icon">
-            <span class="topbar-wordmark">mole</span>
+            <img src="/static/mole-favicon.png" alt="mole" class="topbar-logo-icon">
         </a>
 
         <div class="topbar-sep"></div>
 
         <div class="topbar-right">
-            <button class="topbar-btn" onclick="toggleTheme()" title="Toggle theme">
-                <svg id="theme-icon-sun" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-                <svg id="theme-icon-moon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
-            </button>
+            <div class="lang-selector">
+                <button class="lang-btn" data-lang="pt" onclick="setLang('pt')" title="Português">🇧🇷</button>
+                <button class="lang-btn" data-lang="en" onclick="setLang('en')" title="English">🇺🇸</button>
+            </div>
 
             {{if .User}}
             <div class="topbar-user">
-                <span>{{.User}}</span>
-                <a href="/auth/logout">logout</a>
+                <span>{{.DisplayName}}</span>
+                <a href="/auth/logout" data-i18n="nav.logout">sair</a>
             </div>
             {{end}}
         </div>
@@ -46,37 +46,41 @@
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-section">
-                <div class="sidebar-label">navigation</div>
+                <div class="sidebar-label" data-i18n="label.navigation">navegação</div>
                 <a href="/me" class="sidebar-item{{if eq .Page "me"}} active{{end}}">
                     <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M5.338 18.322C6.093 15.753 8.427 14 11.075 14h1.85c2.648 0 4.982 1.753 5.737 4.322"/></svg>
-                    Dashboard
+                    <span data-i18n="nav.dashboard">Dashboard</span>
                 </a>
                 <a href="/developers" class="sidebar-item{{if eq .Page "developers"}} active{{end}}">
-                    <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4-4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-                    Developers
+                    <svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+                    <span data-i18n="nav.developers">Desenvolvedores</span>
                 </a>
                 <a href="/team" class="sidebar-item{{if eq .Page "team"}} active{{end}}">
                     <svg viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
-                    Team
+                    <span data-i18n="nav.team">Time</span>
                 </a>
                 <a href="/modules" class="sidebar-item{{if eq .Page "modules"}} active{{end}}">
                     <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-                    Modules
+                    <span data-i18n="nav.modules">Módulos</span>
+                </a>
+                <a href="/about" class="sidebar-item{{if eq .Page "about"}} active{{end}}">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                    <span data-i18n="nav.about">Sobre</span>
                 </a>
             </div>
 
             {{if .IsAdmin}}
             <div class="sidebar-section">
-                <div class="sidebar-label">admin</div>
+                <div class="sidebar-label" data-i18n="label.admin">admin</div>
                 <a href="/costs" class="sidebar-item{{if eq .Page "costs"}} active{{end}}">
                     <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-                    Costs
+                    <span data-i18n="nav.costs">Custos</span>
                 </a>
             </div>
             {{end}}
 
             <div class="sidebar-footer">
-                <div class="sidebar-version">mole</div>
+                <span class="sidebar-version">mole</span>
             </div>
         </aside>
 
@@ -89,35 +93,7 @@
 
     </div>
 
-    <script>
-    function toggleTheme() {
-        var current = document.documentElement.getAttribute('data-theme');
-        var next = current === 'light' ? 'dark' : 'light';
-        document.documentElement.setAttribute('data-theme', next);
-        localStorage.setItem('mole-theme', next);
-        updateThemeIcons(next);
-    }
-
-    function updateThemeIcons(theme) {
-        var sun = document.getElementById('theme-icon-sun');
-        var moon = document.getElementById('theme-icon-moon');
-        if (theme === 'light') {
-            sun.style.display = 'block';
-            moon.style.display = 'none';
-        } else {
-            sun.style.display = 'none';
-            moon.style.display = 'block';
-        }
-    }
-
-    (function() {
-        var saved = localStorage.getItem('mole-theme');
-        if (saved) {
-            document.documentElement.setAttribute('data-theme', saved);
-            updateThemeIcons(saved);
-        }
-    })();
-    </script>
+    <script src="/static/i18n.js"></script>
 </body>
 </html>
 {{end}}

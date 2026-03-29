@@ -2,28 +2,49 @@
 
 {{define "content"}}
 <div class="page-header">
-    <h1>team</h1>
-    <p>quality distribution and training insights</p>
+    <h1 class="page-title" data-i18n="page.team">Time</h1>
+    <p class="page-subtitle" data-i18n="page.team.subtitle">distribuição de qualidade e insights de treinamento</p>
 </div>
 
-<section>
-    <h2>mole acceptance rate</h2>
-    <div hx-get="/team/acceptance" hx-trigger="load" hx-swap="innerHTML">
-        <p>loading...</p>
+<div class="section">
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <div class="card-title" data-i18n="card.acceptance-rate">Taxa de Aceite</div>
+                <div class="card-subtitle" data-i18n="card.acceptance-subtitle">comentários confirmados vs falsos positivos (30 dias)</div>
+            </div>
+        </div>
+        <div id="team-acceptance" hx-get="/team/acceptance" hx-trigger="load" hx-swap="innerHTML">
+            <div class="loading" data-i18n="loading">carregando...</div>
+        </div>
     </div>
-</section>
+</div>
 
-<section>
-    <h2>issue distribution</h2>
-    <div hx-get="/team/distribution?period=30d" hx-trigger="load" hx-swap="innerHTML">
-        <p>loading...</p>
+<div class="section">
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <div class="card-title" data-i18n="card.distribution-dev">Distribuição por Developer</div>
+                <div class="card-subtitle" data-i18n="card.last-30d">últimos 30 dias</div>
+            </div>
+        </div>
+        <div id="team-distribution" hx-get="/team/distribution?period=30d" hx-trigger="load" hx-swap="innerHTML">
+            <div class="loading" data-i18n="loading">carregando...</div>
+        </div>
     </div>
-</section>
+</div>
 
-<section>
-    <h2>training suggestions</h2>
-    <div hx-get="/team/training" hx-trigger="load" hx-swap="innerHTML">
-        <p>loading...</p>
+<div class="section">
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <div class="card-title" data-i18n="card.training">Sugestões de Treinamento</div>
+                <div class="card-subtitle" data-i18n="card.training-subtitle">top categorias de issues do time</div>
+            </div>
+        </div>
+        <div id="team-training" hx-get="/team/training" hx-trigger="load" hx-swap="innerHTML">
+            <div class="loading" data-i18n="loading">carregando...</div>
+        </div>
     </div>
-</section>
+</div>
 {{end}}

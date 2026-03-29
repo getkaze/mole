@@ -1,12 +1,19 @@
 {{if .Topics}}
-<ul class="training-list">
+<div class="training-list">
     {{range .Topics}}
-    <li>
-        <strong>{{.Category}} / {{.Subcategory}}</strong>
-        <span class="training-count">{{.Count}} occurrences in last 30 days</span>
-    </li>
+    <div class="training-item">
+        <div>
+            <div class="training-name">{{.Category}}</div>
+            {{if .Subcategory}}
+            <div class="training-sub">{{.Subcategory}}</div>
+            {{end}}
+        </div>
+        <span class="training-count">{{.Count}}x</span>
+    </div>
     {{end}}
-</ul>
+</div>
 {{else}}
-<p>No recurring patterns detected yet.</p>
+<div class="empty-state" style="padding:20px 0;">
+    <div class="empty-state-text" data-i18n="empty.no-patterns">Nenhum padrão recorrente detectado ainda.</div>
+</div>
 {{end}}

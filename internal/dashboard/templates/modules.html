@@ -2,38 +2,62 @@
 
 {{define "content"}}
 <div class="page-header">
-    <h1>modules</h1>
-    <p>health scores and tech debt by module</p>
+    <h1 class="page-title" data-i18n="page.modules">Módulos</h1>
+    <p class="page-subtitle" data-i18n="page.modules.subtitle">saúde e tech debt por módulo</p>
 </div>
 
-{{if .Modules}}
-<section>
-    <h2>overview</h2>
-    <table>
-        <thead>
-            <tr>
-                <th>module</th>
-                <th>health</th>
-                <th>issues</th>
-                <th>debt</th>
-            </tr>
-        </thead>
-        <tbody>
-            {{range .Modules}}
-            <tr>
-                <td><a href="/modules/{{.ModuleName}}">{{.ModuleName}}</a></td>
-                <td>{{printf "%.0f" .HealthScore}}/100</td>
-                <td>{{.TotalIssues}}</td>
-                <td>{{.DebtItems}}</td>
-            </tr>
-            {{end}}
-        </tbody>
-    </table>
-</section>
+{{if .RepoGroups}}
+{{range .RepoGroups}}
+<div class="section">
+    <div class="section-header">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="color:var(--muted);"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0020 4.77 5.07 5.07 0 0019.91 1S18.73.65 16 2.48a13.38 13.38 0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 005 4.77a5.44 5.44 0 00-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 009 18.13V22"/></svg>
+        <span class="section-title">{{.Repo}}</span>
+    </div>
+    <div class="modules-grid">
+        {{range .Modules}}
+        <a href="/modules/{{.ModuleName}}?repo={{.Repo}}" style="text-decoration:none;">
+            <div class="module-card">
+                <div class="module-name">{{.ModuleName}}</div>
+
+                <div>
+                    <div class="progress-wrap" style="margin-bottom:6px;">
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill {{if ge .HealthScore 80.0}}success{{else if ge .HealthScore 60.0}}warning{{else}}danger{{end}}"
+                                 style="width:{{printf "%.0f" .HealthScore}}%"></div>
+                        </div>
+                        <span class="progress-label">{{printf "%.0f" .HealthScore}}</span>
+                    </div>
+                </div>
+
+                <div class="module-stats">
+                    <div class="module-stat">
+                        <div class="module-stat-value">{{.TotalIssues}}</div>
+                        <div class="module-stat-label" data-i18n="stat.issues">issues</div>
+                    </div>
+                    <div class="module-stat">
+                        <div class="module-stat-value" {{if gt .DebtItems 0}}style="color:var(--warning)"{{end}}>{{.DebtItems}}</div>
+                        <div class="module-stat-label" data-i18n="stat.debt-items">debt items</div>
+                    </div>
+                    <div class="module-stat">
+                        {{if ge .HealthScore 80.0}}
+                        <span class="badge badge-success" data-i18n="badge.healthy">saudável</span>
+                        {{else if ge .HealthScore 60.0}}
+                        <span class="badge badge-warning" data-i18n="badge.attention">atenção</span>
+                        {{else}}
+                        <span class="badge badge-danger" data-i18n="badge.critical">crítico</span>
+                        {{end}}
+                    </div>
+                </div>
+            </div>
+        </a>
+        {{end}}
+    </div>
+</div>
+{{end}}
 {{else}}
-<section>
-    <h2>overview</h2>
-    <p>no module data yet. metrics are aggregated after reviews.</p>
-</section>
+<div class="empty-state">
+    <div class="empty-state-icon">🧩</div>
+    <div class="empty-state-text" data-i18n="empty.no-modules">Nenhum dado de módulo ainda. Métricas são agregadas após reviews.</div>
+</div>
 {{end}}
 {{end}}

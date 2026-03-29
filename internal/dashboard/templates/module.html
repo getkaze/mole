@@ -2,22 +2,36 @@
 
 {{define "content"}}
 <div class="page-header">
-    <h1>{{.Module.ModuleName}}</h1>
-    <p>module health and debt tracking</p>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px;">
+        <a href="/modules" style="color:var(--muted);font-size:13px;" data-i18n="link.back-modules">← Módulos</a>
+    </div>
+    <h1 class="page-title" style="font-family:var(--mono);">{{.Module.ModuleName}}</h1>
+    {{if .Module.Repo}}<p class="page-subtitle" style="font-family:var(--mono);font-size:12px;color:var(--muted);margin-bottom:2px;">{{.Module.Repo}}</p>{{end}}
+    <p class="page-subtitle" data-i18n="page.module.subtitle">health score e debt tracking</p>
 </div>
 
-<div class="metrics-summary">
-    <div class="metric">
-        <span class="metric-value">{{printf "%.0f" .Module.HealthScore}}</span>
-        <span class="metric-label">health</span>
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-label" data-i18n="stat.health-score">Health Score</div>
+        <div class="stat-value {{if ge .Module.HealthScore 80.0}}success{{else if ge .Module.HealthScore 60.0}}warning{{else}}danger{{end}}">
+            {{printf "%.0f" .Module.HealthScore}}
+        </div>
+        <div style="margin-top:10px;">
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill {{if ge .Module.HealthScore 80.0}}success{{else if ge .Module.HealthScore 60.0}}warning{{else}}danger{{end}}"
+                     style="width:{{printf "%.0f" .Module.HealthScore}}%"></div>
+            </div>
+        </div>
     </div>
-    <div class="metric">
-        <span class="metric-value">{{.Module.TotalIssues}}</span>
-        <span class="metric-label">issues</span>
+    <div class="stat-card">
+        <div class="stat-label" data-i18n="stat.total-issues">Total Issues</div>
+        <div class="stat-value">{{.Module.TotalIssues}}</div>
+        <div class="stat-meta" data-i18n="stat.issues-found">issues encontrados</div>
     </div>
-    <div class="metric">
-        <span class="metric-value">{{.Module.DebtItems}}</span>
-        <span class="metric-label">debt</span>
+    <div class="stat-card">
+        <div class="stat-label" data-i18n="stat.debt-items">Debt Items</div>
+        <div class="stat-value {{if gt .Module.DebtItems 0}}warning{{end}}">{{.Module.DebtItems}}</div>
+        <div class="stat-meta" data-i18n="stat.debt-items-meta">itens de tech debt</div>
     </div>
 </div>
 {{end}}

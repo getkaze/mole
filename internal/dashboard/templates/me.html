@@ -2,28 +2,79 @@
 
 {{define "content"}}
 <div class="page-header">
-    <h1>{{.User}}</h1>
-    <p>your review activity and growth</p>
+    <h1 class="page-title">{{.DisplayName}}</h1>
+    <p class="page-subtitle" data-i18n="page.me.subtitle">sua atividade de review e crescimento</p>
 </div>
 
-<section>
-    <h2>issues by category</h2>
-    <div hx-get="/me/issues?period=30d" hx-trigger="load" hx-swap="innerHTML">
-        <p>loading...</p>
+<div class="section">
+    <div class="section-title" data-i18n="section.overview">visão geral</div>
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-label" data-i18n="stat.score-trend">Tendência de Score</div>
+            <div class="stat-value accent" id="me-score">—</div>
+            <div class="stat-meta" data-i18n="stat.last-4-weeks">últimas 4 semanas</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label" data-i18n="stat.streaks">Sequências</div>
+            <div class="stat-value" id="me-streak">—</div>
+            <div class="stat-meta" data-i18n="stat.clean-prs">PRs limpos consecutivos</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-label" data-i18n="stat.badges">Conquistas</div>
+            <div class="stat-value" id="me-badges-count">—</div>
+            <div class="stat-meta" data-i18n="stat.unlocked">conquistas desbloqueadas</div>
+        </div>
     </div>
-</section>
+</div>
 
-<section>
-    <h2>score trend</h2>
-    <div hx-get="/me/trends?period=90d" hx-trigger="load" hx-swap="innerHTML">
-        <p>loading...</p>
+<div class="section">
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <div class="card-title" data-i18n="card.issues-category">Issues por Categoria</div>
+                <div class="card-subtitle" data-i18n="card.distribution-30d">distribuição dos últimos 30 dias</div>
+            </div>
+            <div class="period-selector">
+                <button class="period-btn active" hx-get="/me/issues?period=30d" hx-target="#me-issues" hx-swap="innerHTML" onclick="setPeriodActive(this)">30d</button>
+                <button class="period-btn" hx-get="/me/issues?period=7d" hx-target="#me-issues" hx-swap="innerHTML" onclick="setPeriodActive(this)">7d</button>
+                <button class="period-btn" hx-get="/me/issues?period=90d" hx-target="#me-issues" hx-swap="innerHTML" onclick="setPeriodActive(this)">90d</button>
+            </div>
+        </div>
+        <div id="me-issues" hx-get="/me/issues?period=30d" hx-trigger="load" hx-swap="innerHTML">
+            <div class="loading" data-i18n="loading">carregando...</div>
+        </div>
     </div>
-</section>
+</div>
 
-<section>
-    <h2>streaks &amp; badges</h2>
-    <div hx-get="/me/badges" hx-trigger="load" hx-swap="innerHTML">
-        <p>loading...</p>
+<div class="section">
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <div class="card-title" data-i18n="card.score-trend">Tendência de Score</div>
+                <div class="card-subtitle" data-i18n="card.weekly-90d">evolução semanal dos últimos 90 dias</div>
+            </div>
+        </div>
+        <div id="me-trends" hx-get="/me/trends?period=90d" hx-trigger="load" hx-swap="innerHTML">
+            <div class="loading" data-i18n="loading">carregando...</div>
+        </div>
     </div>
-</section>
+</div>
+
+<div class="section">
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title" data-i18n="card.streaks-badges">Sequências & Conquistas</div>
+        </div>
+        <div id="me-badges" hx-get="/me/badges" hx-trigger="load" hx-swap="innerHTML">
+            <div class="loading" data-i18n="loading">carregando...</div>
+        </div>
+    </div>
+</div>
+
+<script>
+function setPeriodActive(btn) {
+    btn.closest('.period-selector').querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+}
+</script>
 {{end}}

@@ -2,19 +2,29 @@
 
 {{define "content"}}
 <div class="page-header">
-    <h1>costs</h1>
-    <p>claude API usage and estimated costs</p>
+    <h1 class="page-title" data-i18n="page.costs">Custos</h1>
+    <p class="page-subtitle" data-i18n="page.costs.subtitle">uso da API Claude e custos estimados</p>
 </div>
 
-<div hx-get="/costs/breakdown?period=30d" hx-trigger="load" hx-swap="innerHTML" id="costs-content">
-    <section>
-        <p>loading...</p>
-    </section>
+<div class="section">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+        <div class="section-title" style="margin-bottom:0;" data-i18n="section.period">período</div>
+        <div class="period-selector">
+            <button class="period-btn" hx-get="/costs/breakdown?period=7d" hx-target="#costs-content" hx-swap="innerHTML" onclick="setPeriodActive(this)">7d</button>
+            <button class="period-btn active" hx-get="/costs/breakdown?period=30d" hx-target="#costs-content" hx-swap="innerHTML" onclick="setPeriodActive(this)">30d</button>
+            <button class="period-btn" hx-get="/costs/breakdown?period=90d" hx-target="#costs-content" hx-swap="innerHTML" onclick="setPeriodActive(this)">90d</button>
+        </div>
+    </div>
+
+    <div id="costs-content" hx-get="/costs/breakdown?period=30d" hx-trigger="load" hx-swap="innerHTML">
+        <div class="loading" data-i18n="loading">carregando...</div>
+    </div>
 </div>
 
-<div style="display: flex; gap: 8px; margin-bottom: 16px;">
-    <button class="btn-ghost btn" hx-get="/costs/breakdown?period=7d" hx-target="#costs-content" hx-swap="innerHTML">7d</button>
-    <button class="btn-ghost btn" hx-get="/costs/breakdown?period=30d" hx-target="#costs-content" hx-swap="innerHTML">30d</button>
-    <button class="btn-ghost btn" hx-get="/costs/breakdown?period=90d" hx-target="#costs-content" hx-swap="innerHTML">90d</button>
-</div>
+<script>
+function setPeriodActive(btn) {
+    btn.closest('.period-selector').querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+}
+</script>
 {{end}}

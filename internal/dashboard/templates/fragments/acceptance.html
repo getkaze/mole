@@ -1,25 +1,26 @@
 {{if .Rate}}
-<div class="metrics-summary">
-    <div class="metric">
-        <span class="metric-value">{{printf "%.0f" .Rate.Rate}}%</span>
-        <span class="metric-label">acceptance rate</span>
+<div class="acceptance-display">
+    <div class="acceptance-number"
+        {{if ge .Rate.Rate 80.0}}style="color:var(--success)"
+        {{else if ge .Rate.Rate 60.0}}style="color:var(--warning)"
+        {{else}}style="color:var(--danger)"
+        {{end}}>
+        {{printf "%.0f" .Rate.Rate}}%
     </div>
-    <div class="metric">
-        <span class="metric-value">{{.Rate.Confirmed}}</span>
-        <span class="metric-label">confirmed</span>
-    </div>
-    <div class="metric">
-        <span class="metric-value">{{.Rate.FalsePositive}}</span>
-        <span class="metric-label">false positive</span>
-    </div>
-    <div class="metric">
-        <span class="metric-value">{{.Rate.Pending}}</span>
-        <span class="metric-label">pending</span>
+    <div>
+        <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px;" data-i18n="label.acceptance-rate">taxa de aceite</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <span class="badge badge-success">{{.Rate.Confirmed}} <span data-i18n="label.confirmed">confirmados</span></span>
+            <span class="badge badge-danger">{{.Rate.FalsePositive}} <span data-i18n="label.false-positive">falso positivo</span></span>
+            <span class="badge badge-neutral">{{.Rate.Pending}} <span data-i18n="label.pending">pendentes</span></span>
+        </div>
+        <div style="font-size:11px;color:var(--muted2);margin-top:8px;" data-i18n="label.reaction-hint">
+            Devs reagem com 👍 ou 👎 nos comentários inline
+        </div>
     </div>
 </div>
-<p class="acceptance-note">
-    developers react with 👍 to confirm or 👎 to mark false positive on inline comments
-</p>
 {{else}}
-<p>no validation data yet. developers can react to inline comments with 👍 or 👎.</p>
+<div class="empty-state" style="padding:20px 0;">
+    <div class="empty-state-text" data-i18n="empty.no-validation">Nenhum dado de validação ainda. Devs podem reagir aos comentários com 👍 ou 👎.</div>
+</div>
 {{end}}

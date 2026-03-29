@@ -2,28 +2,58 @@
 
 {{define "content"}}
 <div class="page-header">
-    <h1>{{.Developer}}</h1>
-    <p>review activity and growth</p>
+    <h1 class="page-title">{{.Developer}}</h1>
+    <p class="page-subtitle" data-i18n="page.dev.subtitle">atividade de review e crescimento</p>
 </div>
 
-<section>
-    <h2>issues by category</h2>
-    <div hx-get="/developers/{{.Developer}}/issues?period=30d" hx-trigger="load" hx-swap="innerHTML">
-        <p>loading...</p>
+<div class="section">
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <div class="card-title" data-i18n="card.issues-category">Issues por Categoria</div>
+                <div class="card-subtitle" data-i18n="card.distribution-30d">distribuição dos últimos 30 dias</div>
+            </div>
+            <div class="period-selector">
+                <button class="period-btn active" hx-get="/developers/{{.Developer}}/issues?period=30d" hx-target="#dev-issues" hx-swap="innerHTML" onclick="setPeriodActive(this)">30d</button>
+                <button class="period-btn" hx-get="/developers/{{.Developer}}/issues?period=7d" hx-target="#dev-issues" hx-swap="innerHTML" onclick="setPeriodActive(this)">7d</button>
+                <button class="period-btn" hx-get="/developers/{{.Developer}}/issues?period=90d" hx-target="#dev-issues" hx-swap="innerHTML" onclick="setPeriodActive(this)">90d</button>
+            </div>
+        </div>
+        <div id="dev-issues" hx-get="/developers/{{.Developer}}/issues?period=30d" hx-trigger="load" hx-swap="innerHTML">
+            <div class="loading" data-i18n="loading">carregando...</div>
+        </div>
     </div>
-</section>
+</div>
 
-<section>
-    <h2>score trend</h2>
-    <div hx-get="/developers/{{.Developer}}/trends?period=90d" hx-trigger="load" hx-swap="innerHTML">
-        <p>loading...</p>
+<div class="section">
+    <div class="card">
+        <div class="card-header">
+            <div>
+                <div class="card-title" data-i18n="card.score-trend">Tendência de Score</div>
+                <div class="card-subtitle" data-i18n="card.weekly-90d">evolução semanal dos últimos 90 dias</div>
+            </div>
+        </div>
+        <div id="dev-trends" hx-get="/developers/{{.Developer}}/trends?period=90d" hx-trigger="load" hx-swap="innerHTML">
+            <div class="loading" data-i18n="loading">carregando...</div>
+        </div>
     </div>
-</section>
+</div>
 
-<section>
-    <h2>streaks &amp; badges</h2>
-    <div hx-get="/developers/{{.Developer}}/badges" hx-trigger="load" hx-swap="innerHTML">
-        <p>loading...</p>
+<div class="section">
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title" data-i18n="card.streaks-badges">Sequências & Conquistas</div>
+        </div>
+        <div id="dev-badges" hx-get="/developers/{{.Developer}}/badges" hx-trigger="load" hx-swap="innerHTML">
+            <div class="loading" data-i18n="loading">carregando...</div>
+        </div>
     </div>
-</section>
+</div>
+
+<script>
+function setPeriodActive(btn) {
+    btn.closest('.period-selector').querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+}
+</script>
 {{end}}

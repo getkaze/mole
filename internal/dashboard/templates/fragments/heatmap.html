@@ -1,24 +1,17 @@
 {{if .Categories}}
-<table class="heatmap">
-    <thead>
-        <tr>
-            <th>Category</th>
-            <th>Count</th>
-            <th>Distribution</th>
-        </tr>
-    </thead>
-    <tbody>
-        {{range .Categories}}
-        <tr>
-            <td>{{.Name}}</td>
-            <td>{{.Count}}</td>
-            <td>
-                <div class="bar" style="width: {{.Percent}}%"></div>
-            </td>
-        </tr>
-        {{end}}
-    </tbody>
-</table>
+<div class="heatmap">
+    {{range .Categories}}
+    <div class="heatmap-row">
+        <span class="heatmap-label">{{.Name}}</span>
+        <div class="heatmap-bar-bg">
+            <div class="heatmap-bar-fill" style="width:{{printf "%.0f" .Percent}}%"></div>
+        </div>
+        <span class="heatmap-count">{{.Count}}</span>
+    </div>
+    {{end}}
+</div>
 {{else}}
-<p>No issues found in this period.</p>
+<div class="empty-state">
+    <div class="empty-state-text" data-i18n="empty.no-issues">Nenhuma issue encontrada neste período.</div>
+</div>
 {{end}}

@@ -1,63 +1,79 @@
 {{define "costs-breakdown.html"}}
 {{if .Costs}}
-<section>
-    <h2>summary</h2>
-    <div class="metrics-summary">
-        <div class="metric">
-            <div class="metric-value">${{printf "%.2f" .Costs.TotalCost}}</div>
-            <div class="metric-label">total cost</div>
-        </div>
-        <div class="metric">
-            <div class="metric-value">{{.Costs.TotalReviews}}</div>
-            <div class="metric-label">reviews</div>
-        </div>
-        <div class="metric">
-            <div class="metric-value">{{formatTokens .Costs.TotalInput}}</div>
-            <div class="metric-label">input tokens</div>
-        </div>
-        <div class="metric">
-            <div class="metric-value">{{formatTokens .Costs.TotalOutput}}</div>
-            <div class="metric-label">output tokens</div>
-        </div>
+<div class="stats-grid" style="margin-bottom:24px;">
+    <div class="stat-card">
+        <div class="stat-label" data-i18n="costs.total">Custo Total</div>
+        <div class="stat-value">${{printf "%.2f" .Costs.TotalCost}}</div>
+        <div class="stat-meta" data-i18n="costs.estimated">estimado no período</div>
     </div>
-</section>
+    <div class="stat-card">
+        <div class="stat-label" data-i18n="costs.reviews">Reviews</div>
+        <div class="stat-value">{{.Costs.TotalReviews}}</div>
+        <div class="stat-meta" data-i18n="costs.reviews-executed">revisões executadas</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label" data-i18n="costs.unique-prs">PRs Únicos</div>
+        <div class="stat-value">{{.Costs.UniquePRs}}</div>
+        <div class="stat-meta" data-i18n="costs.unique-prs-meta">PRs revisados</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label" data-i18n="costs.input-tokens">Input Tokens</div>
+        <div class="stat-value">{{formatTokens .Costs.TotalInput}}</div>
+        <div class="stat-meta" data-i18n="costs.input-meta">tokens de entrada</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label" data-i18n="costs.output-tokens">Output Tokens</div>
+        <div class="stat-value">{{formatTokens .Costs.TotalOutput}}</div>
+        <div class="stat-meta" data-i18n="costs.output-meta">tokens de saída</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label" data-i18n="costs.avg-reviews-pr">Média Reviews/PR</div>
+        <div class="stat-value">{{.Costs.AvgReviewsPR}}</div>
+        <div class="stat-meta" data-i18n="costs.avg-reviews-meta">revisões por PR</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-label" data-i18n="costs.avg-cost-pr">Custo Médio/PR</div>
+        <div class="stat-value">${{.Costs.AvgCostPR}}</div>
+        <div class="stat-meta" data-i18n="costs.avg-cost-meta">custo por PR</div>
+    </div>
+</div>
 
 {{if .Costs.Models}}
-<section>
-    <h2>by model</h2>
+<div class="section-title" data-i18n="costs.by-model">por modelo</div>
+<div class="table-wrap">
     <table>
         <thead>
             <tr>
-                <th>model</th>
-                <th>reviews</th>
-                <th>input tokens</th>
-                <th>output tokens</th>
-                <th>input cost</th>
-                <th>output cost</th>
-                <th>total</th>
+                <th data-i18n="costs.th-model">Modelo</th>
+                <th data-i18n="th.reviews">Reviews</th>
+                <th data-i18n="costs.input-tokens">Input Tokens</th>
+                <th data-i18n="costs.output-tokens">Output Tokens</th>
+                <th data-i18n="costs.th-input-cost">Custo Input</th>
+                <th data-i18n="costs.th-output-cost">Custo Output</th>
+                <th data-i18n="costs.th-total">Total</th>
             </tr>
         </thead>
         <tbody>
             {{range .Costs.Models}}
             <tr>
-                <td>{{.Model}}</td>
-                <td>{{.Reviews}}</td>
-                <td>{{formatTokens .InputTokens}}</td>
-                <td>{{formatTokens .OutputTokens}}</td>
-                <td>${{.InputCost}}</td>
-                <td>${{.OutputCost}}</td>
-                <td>${{.TotalCost}}</td>
+                <td><span class="cost-model-name">{{.Model}}</span></td>
+                <td class="td-muted">{{.Reviews}}</td>
+                <td class="td-muted">{{formatTokens .InputTokens}}</td>
+                <td class="td-muted">{{formatTokens .OutputTokens}}</td>
+                <td class="td-muted">${{.InputCost}}</td>
+                <td class="td-muted">${{.OutputCost}}</td>
+                <td style="font-weight:600;">${{.TotalCost}}</td>
             </tr>
             {{end}}
         </tbody>
     </table>
-</section>
+</div>
 {{end}}
 
 {{else}}
-<section>
-    <h2>summary</h2>
-    <p>no usage data yet. costs are tracked after reviews run.</p>
-</section>
+<div class="empty-state">
+    <div class="empty-state-icon">💰</div>
+    <div class="empty-state-text" data-i18n="empty.no-costs">Nenhum dado de uso ainda. Custos são registrados após reviews.</div>
+</div>
 {{end}}
 {{end}}

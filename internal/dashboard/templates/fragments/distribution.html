@@ -1,24 +1,42 @@
 {{if .Developers}}
-<table>
-    <thead>
-        <tr>
-            <th>Developer</th>
-            <th>Reviews</th>
-            <th>Avg Score</th>
-            <th>Top Issue</th>
-        </tr>
-    </thead>
-    <tbody>
-        {{range .Developers}}
-        <tr>
-            <td>{{.Name}}</td>
-            <td>{{.Reviews}}</td>
-            <td>{{printf "%.0f" .AvgScore}}</td>
-            <td>{{.TopCategory}}</td>
-        </tr>
-        {{end}}
-    </tbody>
-</table>
+<div class="table-wrap" style="border:none;border-radius:0;">
+    <table>
+        <thead>
+            <tr>
+                <th data-i18n="th.developer">Developer</th>
+                <th data-i18n="th.reviews">Reviews</th>
+                <th data-i18n="th.avg-score">Score Médio</th>
+                <th data-i18n="th.top-issue">Top Issue</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Developers}}
+            <tr>
+                <td style="font-weight:500;">{{.Name}}</td>
+                <td class="td-muted">{{.Reviews}}</td>
+                <td>
+                    {{if ge .AvgScore 90.0}}
+                    <span class="score-indicator high">{{printf "%.0f" .AvgScore}}</span>
+                    {{else if ge .AvgScore 70.0}}
+                    <span class="score-indicator medium">{{printf "%.0f" .AvgScore}}</span>
+                    {{else}}
+                    <span class="score-indicator low">{{printf "%.0f" .AvgScore}}</span>
+                    {{end}}
+                </td>
+                <td>
+                    {{if ne .TopCategory "-"}}
+                    <span class="badge badge-neutral">{{.TopCategory}}</span>
+                    {{else}}
+                    <span class="td-muted">—</span>
+                    {{end}}
+                </td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
 {{else}}
-<p>No team data available yet.</p>
+<div class="empty-state" style="padding:20px 0;">
+    <div class="empty-state-text" data-i18n="empty.no-team">Nenhum dado de equipe disponível ainda.</div>
+</div>
 {{end}}

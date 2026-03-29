@@ -1,19 +1,24 @@
 {{if .Streak}}
-<div class="streak">
+<div class="streak-display">
     <span class="streak-count">{{.Streak}}</span>
-    <span class="streak-label">consecutive PRs without critical issues</span>
+    <div>
+        <div style="font-weight:600;font-size:14px;" data-i18n="label.streak">streak</div>
+        <div class="streak-label" data-i18n="label.streak-desc">PRs consecutivos sem issues críticos</div>
+    </div>
 </div>
 {{end}}
 
 {{if .Badges}}
-<div class="badges">
+<div class="badge-grid">
     {{range .Badges}}
-    <div class="badge">
-        <span class="badge-icon">{{.Icon}}</span>
-        <span class="badge-name">{{.Name}}</span>
+    <div class="achievement-badge">
+        <span class="achievement-badge-icon">{{.Icon}}</span>
+        <span>{{.Name}}</span>
     </div>
     {{end}}
 </div>
 {{else}}
-<p>Keep reviewing PRs to earn badges!</p>
+<div class="empty-state" style="padding:20px 0;">
+    <div class="empty-state-text" data-i18n="empty.no-badges">Continue fazendo reviews para desbloquear badges!</div>
+</div>
 {{end}}
