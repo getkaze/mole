@@ -29,16 +29,16 @@ func adminCmd() *cobra.Command {
 func adminSetRoleCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "set-role <github-user> <role>",
-		Short: "Set a user's dashboard role (dev, tech_lead, architect, manager, admin)",
+		Short: "Set a user's dashboard role (dev, tech_lead, manager, admin)",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			user, role := args[0], args[1]
 
 			validRoles := map[string]bool{
-				"dev": true, "tech_lead": true, "architect": true, "manager": true, "admin": true,
+				"dev": true, "tech_lead": true, "manager": true, "admin": true,
 			}
 			if !validRoles[role] {
-				return fmt.Errorf("invalid role %q — must be one of: dev, tech_lead, architect, manager, admin", role)
+				return fmt.Errorf("invalid role %q — must be one of: dev, tech_lead, manager, admin", role)
 			}
 
 			st, err := openStore()
@@ -102,7 +102,7 @@ func adminListCmd() *cobra.Command {
 func adminOptInCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "opt-in <github-user>",
-		Short: "Allow tech leads and architects to see this user's individual data",
+		Short: "Allow tech leads to see this user's individual data",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return setVisibility(args[0], true)
@@ -113,7 +113,7 @@ func adminOptInCmd() *cobra.Command {
 func adminOptOutCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "opt-out <github-user>",
-		Short: "Hide this user's individual data from tech leads and architects",
+		Short: "Hide this user's individual data from tech leads",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return setVisibility(args[0], false)
