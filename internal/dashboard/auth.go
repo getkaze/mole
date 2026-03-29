@@ -23,8 +23,9 @@ const (
 )
 
 type sessionData struct {
-	User      string    `json:"user"`
-	ExpiresAt time.Time `json:"expires_at"`
+	User        string    `json:"user"`
+	DisplayName string    `json:"display_name,omitempty"`
+	ExpiresAt   time.Time `json:"expires_at"`
 }
 
 func (d *Dashboard) handleAuthGitHub(w http.ResponseWriter, r *http.Request) {
@@ -39,7 +40,7 @@ func (d *Dashboard) handleAuthGitHub(w http.ResponseWriter, r *http.Request) {
 	})
 
 	url := fmt.Sprintf(
-		"https://github.com/login/oauth/authorize?client_id=%s&redirect_uri=%s/auth/callback&state=%s&scope=read:user",
+		"https://github.com/login/oauth/authorize?client_id=%s&redirect_uri=%s/auth/callback&state=%s&scope=read%%3Auser+read%%3Aorg",
 		d.config.GitHubClientID,
 		d.config.BaseURL,
 		state,
@@ -70,31 +71,45 @@ func (d *Dashboard) handleAuthCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get user info
-	username, err := getGitHubUser(token)
+	ghUser, err := getGitHubUser(token)
 	if err != nil {
 		slog.Error("failed to get github user", "error", err)
 		http.Error(w, "authentication failed", http.StatusInternalServerError)
 		return
 	}
 
+	// Verify org membership if configured
+	if d.config.AllowedOrg != "" {
+		if !checkOrgMembership(token, d.config.AllowedOrg, ghUser.Login) {
+			http.Redirect(w, r, "/auth/login?error=forbidden", http.StatusTemporaryRedirect)
+			return
+		}
+	}
+
 	// Ensure access record exists
-	_, err = d.store.GetAccess(r.Context(), username)
+	_, err = d.store.GetAccess(r.Context(), ghUser.Login)
 	if err != nil {
 		// Create default access
 		d.store.UpsertAccess(r.Context(), &molestore.DashboardAccess{
-			GitHubUser: username,
+			GitHubUser: ghUser.Login,
 			Role:       "dev",
 		})
 	}
 
 	// Set session cookie
 	session := sessionData{
-		User:      username,
-		ExpiresAt: time.Now().Add(time.Duration(sessionMaxAge) * time.Second),
+		User:        ghUser.Login,
+		DisplayName: ghUser.Name,
+		ExpiresAt:   time.Now().Add(time.Duration(sessionMaxAge) * time.Second),
 	}
 	d.setSession(w, session)
 
 	http.Redirect(w, r, "/me", http.StatusTemporaryRedirect)
+}
+
+func (d *Dashboard) handleAuthLogin(w http.ResponseWriter, r *http.Request) {
+	errParam := r.URL.Query().Get("error")
+	d.pages["login.html"].ExecuteTemplate(w, "login", map[string]any{"Error": errParam})
 }
 
 func (d *Dashboard) handleLogout(w http.ResponseWriter, r *http.Request) {
@@ -117,17 +132,25 @@ func (d *Dashboard) requireAuth(next http.HandlerFunc) http.HandlerFunc {
 				http.Error(w, "unauthorized", http.StatusUnauthorized)
 				return
 			}
-			d.pages["login.html"].ExecuteTemplate(w, "login", nil)
+			http.Redirect(w, r, "/auth/login", http.StatusTemporaryRedirect)
 			return
 		}
 
 		// Inject user into request context via a simple header trick
 		r.Header.Set("X-Mole-User", session.User)
+		r.Header.Set("X-Mole-Display-Name", session.DisplayName)
 		next(w, r)
 	}
 }
 
 func (d *Dashboard) getUser(r *http.Request) string {
+	return r.Header.Get("X-Mole-User")
+}
+
+func (d *Dashboard) getDisplayName(r *http.Request) string {
+	if name := r.Header.Get("X-Mole-Display-Name"); name != "" {
+		return name
+	}
 	return r.Header.Get("X-Mole-User")
 }
 
@@ -225,27 +248,50 @@ func exchangeCode(clientID, clientSecret, code string) (string, error) {
 	return result.AccessToken, nil
 }
 
-func getGitHubUser(token string) (string, error) {
+func checkOrgMembership(token, org, username string) bool {
+	url := fmt.Sprintf("https://api.github.com/orgs/%s/members/%s", org, username)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return false
+	}
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Accept", "application/vnd.github+json")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return false
+	}
+	resp.Body.Close()
+	return resp.StatusCode == http.StatusNoContent
+}
+
+type githubUser struct {
+	Login string
+	Name  string
+}
+
+func getGitHubUser(token string) (*githubUser, error) {
 	req, _ := http.NewRequest("GET", "https://api.github.com/user", nil)
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Accept", "application/json")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	var user struct {
 		Login string `json:"login"`
+		Name  string `json:"name"`
 	}
 	body, _ := io.ReadAll(resp.Body)
 	if err := json.Unmarshal(body, &user); err != nil {
-		return "", err
+		return nil, err
 	}
 	if user.Login == "" {
-		return "", fmt.Errorf("empty github login")
+		return nil, fmt.Errorf("empty github login")
 	}
-	return user.Login, nil
+	return &githubUser{Login: user.Login, Name: user.Name}, nil
 }
 

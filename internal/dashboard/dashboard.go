@@ -22,7 +22,9 @@ type Config struct {
 	GitHubClientSecret string                `yaml:"github_client_secret"`
 	SessionSecret      string                `yaml:"session_secret"`
 	BaseURL            string                `yaml:"base_url"` // e.g. http://localhost:8080
+	AllowedOrg         string                `yaml:"allowed_org"`
 	Pricing            map[string][2]float64 // model -> [input, output] per 1M tokens
+	Version            string
 }
 
 // Dashboard holds the handlers and dependencies.
@@ -37,7 +39,7 @@ func New(s store.Store, cfg Config) (*Dashboard, error) {
 	pages := make(map[string]*template.Template)
 
 	// Parse each page template with its own copy of the layout
-	pageFiles := []string{"me.html", "team.html", "modules.html", "module.html", "developers.html", "developer.html", "costs.html"}
+	pageFiles := []string{"me.html", "team.html", "modules.html", "module.html", "developers.html", "developer.html", "costs.html", "about.html"}
 	for _, page := range pageFiles {
 		tmpl, err := template.ParseFS(templateFS,
 			"templates/layout.html",
@@ -80,6 +82,7 @@ func (d *Dashboard) RegisterRoutes(mux *http.ServeMux) {
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.FS(staticSub))))
 
 	// Auth
+	mux.HandleFunc("GET /auth/login", d.handleAuthLogin)
 	mux.HandleFunc("GET /auth/github", d.handleAuthGitHub)
 	mux.HandleFunc("GET /auth/callback", d.handleAuthCallback)
 	mux.HandleFunc("GET /auth/logout", d.handleLogout)
@@ -107,6 +110,9 @@ func (d *Dashboard) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /team/acceptance", d.requireAuth(d.handleTeamAcceptance))
 	mux.HandleFunc("GET /team/distribution", d.requireAuth(d.handleTeamDistribution))
 	mux.HandleFunc("GET /team/training", d.requireAuth(d.handleTeamTraining))
+
+	// About
+	mux.HandleFunc("GET /about", d.requireAuth(d.handleAbout))
 
 	// Costs (admin only)
 	mux.HandleFunc("GET /costs", d.requireAuth(d.handleCosts))

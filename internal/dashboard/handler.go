@@ -11,22 +11,27 @@ import (
 )
 
 type pageData struct {
-	User       string
-	Page       string
-	IsAdmin    bool
-	Modules    []moduleView
+	User        string
+	DisplayName string
+	Page        string
+	IsAdmin     bool
+	RepoGroups []repoGroup
 	Module     moduleView
 	Developers []devOverview
 	Developer  string
 	Costs      *costsData
+	Version    string
 }
 
 type costsData struct {
-	Models     []modelCostView
-	TotalCost  float64
-	TotalInput int64
-	TotalOutput int64
+	Models       []modelCostView
+	TotalCost    float64
+	TotalInput   int64
+	TotalOutput  int64
 	TotalReviews int
+	UniquePRs    int
+	AvgReviewsPR string
+	AvgCostPR    string
 }
 
 type modelCostView struct {
@@ -49,15 +54,30 @@ type devOverview struct {
 }
 
 type moduleView struct {
+	Repo        string
 	ModuleName  string
 	HealthScore float64
 	TotalIssues int
 	DebtItems   int
 }
 
+type repoGroup struct {
+	Repo    string
+	Modules []moduleView
+}
+
 func (d *Dashboard) isAdmin(r *http.Request) bool {
 	access, _ := d.store.GetAccess(r.Context(), d.getUser(r))
 	return access != nil && access.Role == "admin"
+}
+
+func (d *Dashboard) newPageData(r *http.Request, page string) pageData {
+	return pageData{
+		User:        d.getUser(r),
+		DisplayName: d.getDisplayName(r),
+		Page:        page,
+		IsAdmin:     d.isAdmin(r),
+	}
 }
 
 func (d *Dashboard) handleRoot(w http.ResponseWriter, r *http.Request) {
@@ -69,12 +89,12 @@ func (d *Dashboard) handleRoot(w http.ResponseWriter, r *http.Request) {
 }
 
 func (d *Dashboard) handleMe(w http.ResponseWriter, r *http.Request) {
-	data := pageData{User: d.getUser(r), Page: "me", IsAdmin: d.isAdmin(r)}
+	data := d.newPageData(r, "me")
 	d.renderPage(w, "me.html", data)
 }
 
 func (d *Dashboard) handleTeam(w http.ResponseWriter, r *http.Request) {
-	data := pageData{User: d.getUser(r), Page: "team", IsAdmin: d.isAdmin(r)}
+	data := d.newPageData(r, "team")
 	d.renderPage(w, "team.html", data)
 }
 
@@ -87,9 +107,18 @@ func (d *Dashboard) handleModules(w http.ResponseWriter, r *http.Request) {
 		slog.Error("failed to get module metrics", "error", err)
 	}
 
-	var modules []moduleView
+	// Group modules by repo, preserving order from the query (ORDER BY repo, module_name)
+	groupMap := make(map[string]int) // repo -> index in groups slice
+	var groups []repoGroup
 	for _, m := range metrics {
-		modules = append(modules, moduleView{
+		idx, ok := groupMap[m.Repo]
+		if !ok {
+			idx = len(groups)
+			groupMap[m.Repo] = idx
+			groups = append(groups, repoGroup{Repo: m.Repo})
+		}
+		groups[idx].Modules = append(groups[idx].Modules, moduleView{
+			Repo:        m.Repo,
 			ModuleName:  m.ModuleName,
 			HealthScore: m.HealthScore,
 			TotalIssues: m.TotalIssues,
@@ -97,7 +126,8 @@ func (d *Dashboard) handleModules(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	data := pageData{User: d.getUser(r), Page: "modules", IsAdmin: d.isAdmin(r), Modules: modules}
+	data := d.newPageData(r, "modules")
+	data.RepoGroups = groups
 	d.renderPage(w, "modules.html", data)
 }
 
@@ -106,23 +136,24 @@ func (d *Dashboard) handleModule(w http.ResponseWriter, r *http.Request) {
 	now := time.Now()
 	from := now.AddDate(0, 0, -30)
 
-	metrics, err := d.store.GetModuleMetrics(r.Context(), name, "weekly", from, now)
+	// name is "repo/module" encoded as path, but we receive it via {name} wildcard.
+	// Since module_name can contain slashes, we need repo from query param.
+	repo := r.URL.Query().Get("repo")
+
+	metrics, err := d.store.GetModuleMetrics(r.Context(), repo, name, "weekly", from, now)
 	if err != nil || len(metrics) == 0 {
 		http.NotFound(w, r)
 		return
 	}
 
 	latest := metrics[len(metrics)-1]
-	data := pageData{
-		User:    d.getUser(r),
-		Page:    "modules",
-		IsAdmin: d.isAdmin(r),
-		Module: moduleView{
-			ModuleName:  latest.ModuleName,
-			HealthScore: latest.HealthScore,
-			TotalIssues: latest.TotalIssues,
-			DebtItems:   latest.DebtItems,
-		},
+	data := d.newPageData(r, "modules")
+	data.Module = moduleView{
+		Repo:        latest.Repo,
+		ModuleName:  latest.ModuleName,
+		HealthScore: latest.HealthScore,
+		TotalIssues: latest.TotalIssues,
+		DebtItems:   latest.DebtItems,
 	}
 	d.renderPage(w, "module.html", data)
 }
@@ -134,7 +165,7 @@ func (d *Dashboard) handleDevelopers(w http.ResponseWriter, r *http.Request) {
 	now := time.Now()
 	from := now.AddDate(0, 0, -30)
 
-	// Check role — only admin, tech_lead, architect can see the list
+	// Check role — only admin and tech_lead can see the list
 	access, _ := d.store.GetAccess(r.Context(), user)
 	role := "dev"
 	if access != nil {
@@ -171,7 +202,7 @@ func (d *Dashboard) handleDevelopers(w http.ResponseWriter, r *http.Request) {
 			// Manager sees no individual data
 			continue
 		} else if role != "admin" {
-			// tech_lead/architect: show only opted-in
+			// tech_lead: show only opted-in
 			devAccess, _ := d.store.GetAccess(r.Context(), dev)
 			if devAccess != nil && !devAccess.IndividualVisibility && dev != user {
 				continue
@@ -189,7 +220,8 @@ func (d *Dashboard) handleDevelopers(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	data := pageData{User: user, Page: "developers", IsAdmin: role == "admin", Developers: devs}
+	data := d.newPageData(r, "developers")
+	data.Developers = devs
 	d.renderPage(w, "developers.html", data)
 }
 
@@ -209,7 +241,7 @@ func (d *Dashboard) handleDeveloper(w http.ResponseWriter, r *http.Request) {
 		switch role {
 		case "admin":
 			// ok
-		case "tech_lead", "architect":
+		case "tech_lead":
 			targetAccess, _ := d.store.GetAccess(r.Context(), target)
 			if targetAccess == nil || !targetAccess.IndividualVisibility {
 				http.Error(w, "access denied", http.StatusForbidden)
@@ -221,7 +253,8 @@ func (d *Dashboard) handleDeveloper(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	data := pageData{User: user, Page: "developers", IsAdmin: role == "admin", Developer: target}
+	data := d.newPageData(r, "developers")
+	data.Developer = target
 	d.renderPage(w, "developer.html", data)
 }
 
@@ -407,7 +440,7 @@ func (d *Dashboard) handleTeamDistribution(w http.ResponseWriter, r *http.Reques
 				name = "Developer " + dev[:1] + "***"
 			}
 		} else {
-			// tech_lead and architect: show name only if opted-in
+			// tech_lead: show name only if opted-in
 			devAccess, _ := d.store.GetAccess(r.Context(), dev)
 			if devAccess != nil && !devAccess.IndividualVisibility && dev != user {
 				name = "Developer " + dev[:1] + "***"
@@ -468,12 +501,11 @@ func (d *Dashboard) handleTeamTraining(w http.ResponseWriter, r *http.Request) {
 // Costs page (admin only)
 
 func (d *Dashboard) handleCosts(w http.ResponseWriter, r *http.Request) {
-	user := d.getUser(r)
 	if !d.isAdmin(r) {
 		http.Error(w, "access denied", http.StatusForbidden)
 		return
 	}
-	data := pageData{User: user, Page: "costs", IsAdmin: true}
+	data := d.newPageData(r, "costs")
 	d.renderPage(w, "costs.html", data)
 }
 
@@ -509,6 +541,19 @@ func (d *Dashboard) handleCostsBreakdown(w http.ResponseWriter, r *http.Request)
 		costs.TotalReviews += s.Reviews
 	}
 
+	uniquePRs, err := d.store.GetUniquePRCount(r.Context(), from, now)
+	if err != nil {
+		slog.Error("failed to get unique PR count", "error", err)
+	}
+	costs.UniquePRs = uniquePRs
+	if uniquePRs > 0 {
+		costs.AvgReviewsPR = fmt.Sprintf("%.1f", float64(costs.TotalReviews)/float64(uniquePRs))
+		costs.AvgCostPR = fmt.Sprintf("%.2f", costs.TotalCost/float64(uniquePRs))
+	} else {
+		costs.AvgReviewsPR = "0"
+		costs.AvgCostPR = "0.00"
+	}
+
 	d.renderFragment(w, "costs-breakdown.html", map[string]any{"Costs": costs})
 }
 
@@ -529,6 +574,14 @@ func parseTopCategory(issuesByCategoryJSON string) string {
 		}
 	}
 	return topCat
+}
+
+// About page
+
+func (d *Dashboard) handleAbout(w http.ResponseWriter, r *http.Request) {
+	data := d.newPageData(r, "about")
+	data.Version = d.config.Version
+	d.renderPage(w, "about.html", data)
 }
 
 // Helpers

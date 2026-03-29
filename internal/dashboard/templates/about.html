@@ -1,0 +1,23 @@
+{{define "title"}}about{{end}}
+
+{{define "content"}}
+<div class="page-header">
+    <h1 class="page-title" data-i18n="page.about">Sobre</h1>
+    <p class="page-subtitle" data-i18n="page.about.subtitle">configurações da aplicação</p>
+</div>
+
+<div class="section">
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title" data-i18n="about.title">Sobre o Mole</div>
+        </div>
+        <p style="font-size:13px;color:var(--muted);line-height:1.7;margin-bottom:16px;" data-i18n="about.description">
+            Mole é uma ferramenta de code review gratuita e self-hosted que analisa código a fundo e eleva quem o escreve.
+        </p>
+        <div style="display:flex;align-items:center;gap:8px;">
+            <span class="stat-label" style="margin-bottom:0;" data-i18n="about.version">VERSÃO</span>
+            <span style="font-family:var(--mono);font-size:13px;font-weight:600;color:var(--text);">{{.Version}}</span>
+        </div>
+    </div>
+</div>
+{{end}}

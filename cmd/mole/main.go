@@ -103,7 +103,9 @@ func serveCmd() *cobra.Command {
 					GitHubClientSecret: cfg.Dashboard.GitHubClientSecret,
 					SessionSecret:      cfg.Dashboard.SessionSecret,
 					BaseURL:            cfg.Dashboard.BaseURL,
+					AllowedOrg:         cfg.Dashboard.AllowedOrg,
 					Pricing:            cfg.LLM.Pricing,
+					Version:            version,
 				})
 				if err != nil {
 					return fmt.Errorf("dashboard: %w", err)
