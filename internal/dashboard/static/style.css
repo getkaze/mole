@@ -1047,6 +1047,9 @@ tbody td {
     font-weight: 600;
     color: var(--text);
     font-family: var(--mono);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .module-stats {
@@ -1072,4 +1075,14 @@ tbody td {
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: var(--muted2);
+}
+
+.module-evolution {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.module-week-detail {
+    overflow-x: auto;
 }

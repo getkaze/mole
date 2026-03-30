@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -502,6 +503,46 @@ func (s *MySQLStore) UpsertAccess(ctx context.Context, access *DashboardAccess) 
 	return err
 }
 
+// GitHub Profiles
+
+func (s *MySQLStore) UpsertGitHubProfile(ctx context.Context, login, displayName string) error {
+	_, err := s.db.ExecContext(ctx,
+		`INSERT INTO github_profiles (login, display_name)
+		 VALUES (?, ?)
+		 ON DUPLICATE KEY UPDATE display_name = VALUES(display_name)`,
+		login, displayName,
+	)
+	return err
+}
+
+func (s *MySQLStore) GetGitHubProfiles(ctx context.Context, logins []string) (map[string]string, error) {
+	if len(logins) == 0 {
+		return nil, nil
+	}
+
+	query := `SELECT login, display_name FROM github_profiles WHERE login IN (?` + strings.Repeat(",?", len(logins)-1) + `)`
+	args := make([]any, len(logins))
+	for i, l := range logins {
+		args[i] = l
+	}
+
+	rows, err := s.db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	profiles := make(map[string]string, len(logins))
+	for rows.Next() {
+		var login, name string
+		if err := rows.Scan(&login, &name); err != nil {
+			return nil, err
+		}
+		profiles[login] = name
+	}
+	return profiles, rows.Err()
+}
+
 // Score recalculation
 
 func (s *MySQLStore) GetReviewIDsWithFalsePositives(ctx context.Context, from, to time.Time) ([]int64, error) {
@@ -637,9 +678,10 @@ func (s *MySQLStore) ListAllDevMetrics(ctx context.Context, periodType string, f
 
 func (s *MySQLStore) ListAllModuleMetrics(ctx context.Context, periodType string, from, to time.Time) ([]ModuleMetrics, error) {
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT id, repo, module_name, period_type, period_start, period_end, avg_score, health_score, total_issues, debt_items, created_at
+		`SELECT repo, module_name, AVG(health_score), SUM(total_issues), SUM(debt_items)
 		 FROM module_metrics
 		 WHERE period_type = ? AND period_start BETWEEN ? AND ?
+		 GROUP BY repo, module_name
 		 ORDER BY repo, module_name`,
 		periodType, from, to,
 	)
@@ -651,12 +693,10 @@ func (s *MySQLStore) ListAllModuleMetrics(ctx context.Context, periodType string
 	var metrics []ModuleMetrics
 	for rows.Next() {
 		var m ModuleMetrics
-		if err := rows.Scan(
-			&m.ID, &m.Repo, &m.ModuleName, &m.PeriodType, &m.PeriodStart, &m.PeriodEnd,
-			&m.AvgScore, &m.HealthScore, &m.TotalIssues, &m.DebtItems, &m.CreatedAt,
-		); err != nil {
+		if err := rows.Scan(&m.Repo, &m.ModuleName, &m.HealthScore, &m.TotalIssues, &m.DebtItems); err != nil {
 			return nil, err
 		}
+		m.PeriodType = periodType
 		metrics = append(metrics, m)
 	}
 	return metrics, rows.Err()

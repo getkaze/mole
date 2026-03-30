@@ -59,6 +59,16 @@ type moduleView struct {
 	HealthScore float64
 	TotalIssues int
 	DebtItems   int
+	Weeks       []moduleWeek
+}
+
+type moduleWeek struct {
+	Label       string
+	HealthScore float64
+	TotalIssues int
+	DebtItems   int
+	Height      int
+	Color       string
 }
 
 type repoGroup struct {
@@ -146,14 +156,40 @@ func (d *Dashboard) handleModule(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	latest := metrics[len(metrics)-1]
+	// Aggregate totals across all weeks
+	var totalIssues, totalDebt int
+	var healthSum float64
+	weeks := make([]moduleWeek, 0, len(metrics))
+	for _, m := range metrics {
+		totalIssues += m.TotalIssues
+		totalDebt += m.DebtItems
+		healthSum += m.HealthScore
+
+		color := "green"
+		if m.HealthScore < 60 {
+			color = "red"
+		} else if m.HealthScore < 80 {
+			color = "yellow"
+		}
+		weeks = append(weeks, moduleWeek{
+			Label:       m.PeriodStart.Format("02/01"),
+			HealthScore: m.HealthScore,
+			TotalIssues: m.TotalIssues,
+			DebtItems:   m.DebtItems,
+			Height:      int(m.HealthScore),
+			Color:       color,
+		})
+	}
+	avgHealth := healthSum / float64(len(metrics))
+
 	data := d.newPageData(r, "modules")
 	data.Module = moduleView{
-		Repo:        latest.Repo,
-		ModuleName:  latest.ModuleName,
-		HealthScore: latest.HealthScore,
-		TotalIssues: latest.TotalIssues,
-		DebtItems:   latest.DebtItems,
+		Repo:        repo,
+		ModuleName:  name,
+		HealthScore: avgHealth,
+		TotalIssues: totalIssues,
+		DebtItems:   totalDebt,
+		Weeks:       weeks,
 	}
 	d.renderPage(w, "module.html", data)
 }
@@ -187,10 +223,20 @@ func (d *Dashboard) handleDevelopers(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Resolve display names
+	logins := make([]string, 0, len(latestByDev))
+	for dev := range latestByDev {
+		logins = append(logins, dev)
+	}
+	profiles, _ := d.store.GetGitHubProfiles(r.Context(), logins)
+
 	var devs []devOverview
 	for dev, m := range latestByDev {
-		name := dev
 		login := dev
+		name := dev
+		if displayName, ok := profiles[dev]; ok && displayName != "" {
+			name = displayName
+		}
 
 		// Visibility rules
 		if role == "dev" {

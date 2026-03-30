@@ -129,3 +129,9 @@ type DashboardAccess struct {
 	IndividualVisibility bool
 	CreatedAt            time.Time
 }
+
+type GitHubProfile struct {
+	Login       string
+	DisplayName string
+	UpdatedAt   time.Time
+}

@@ -34,4 +34,48 @@
         <div class="stat-meta" data-i18n="stat.debt-items-meta">itens de tech debt</div>
     </div>
 </div>
+
+{{if .Module.Weeks}}
+<div class="section" style="margin-top:24px;">
+    <div class="section-header">
+        <span class="section-title" data-i18n="section.weekly-evolution">Evolução Semanal</span>
+    </div>
+    <div class="module-evolution">
+        <div class="trend-chart" style="height:120px;">
+            {{range .Module.Weeks}}
+            <div class="trend-bar-wrap">
+                <div class="trend-bar {{.Color}}" style="height:{{.Height}}%"></div>
+                <span class="trend-label">{{.Label}}</span>
+            </div>
+            {{end}}
+        </div>
+        <div class="module-week-detail">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th data-i18n="col.week">Semana</th>
+                        <th data-i18n="stat.health-score">Health</th>
+                        <th data-i18n="stat.issues">Issues</th>
+                        <th data-i18n="stat.debt-items">Debt</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {{range .Module.Weeks}}
+                    <tr>
+                        <td>{{.Label}}</td>
+                        <td>
+                            <span class="{{if ge .HealthScore 80.0}}success{{else if ge .HealthScore 60.0}}warning{{else}}danger{{end}}">
+                                {{printf "%.0f" .HealthScore}}
+                            </span>
+                        </td>
+                        <td>{{.TotalIssues}}</td>
+                        <td {{if gt .DebtItems 0}}style="color:var(--warning)"{{end}}>{{.DebtItems}}</td>
+                    </tr>
+                    {{end}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{{end}}
 {{end}}

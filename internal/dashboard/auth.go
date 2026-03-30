@@ -96,6 +96,11 @@ func (d *Dashboard) handleAuthCallback(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
+	// Cache display name for developer list
+	if ghUser.Name != "" {
+		d.store.UpsertGitHubProfile(r.Context(), ghUser.Login, ghUser.Name)
+	}
+
 	// Set session cookie
 	session := sessionData{
 		User:        ghUser.Login,

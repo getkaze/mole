@@ -61,6 +61,10 @@ type Store interface {
 	GetAccess(ctx context.Context, githubUser string) (*DashboardAccess, error)
 	UpsertAccess(ctx context.Context, access *DashboardAccess) error
 
+	// GitHub Profiles
+	UpsertGitHubProfile(ctx context.Context, login, displayName string) error
+	GetGitHubProfiles(ctx context.Context, logins []string) (map[string]string, error)
+
 	// Infrastructure
 	Ping(ctx context.Context) error
 	Close() error
