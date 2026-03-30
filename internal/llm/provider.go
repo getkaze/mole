@@ -20,6 +20,7 @@ type ReviewRequest struct {
 	PreviousIssues string // previously reported issues on this PR
 	SystemPrompt   string
 	Model          string
+	Language       string // en, pt-BR — language for review output
 }
 
 type FileDiff struct {

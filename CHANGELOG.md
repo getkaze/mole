@@ -26,6 +26,8 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### PR Review
 
 - **Deep review on PR open** — first review when a PR is opened now uses deep review (Claude Opus) instead of standard (@mateusmetzker)
+- **Localized LLM output** — review content (issues, suggestions, summary) is now written in the configured language, not just the personality chrome (@mateusmetzker)
+- **pt-BR accent fix** — severity labels and personality texts now use proper Portuguese diacritics (Crítico, Atenção, Sugestão) (@mateusmetzker)
 
 ## [0.1.0] — 2026-03-29
 

@@ -144,7 +144,7 @@ func TestFormat_PortugueseBR(t *testing.T) {
 	if !strings.Contains(result.Body, "toupeira") {
 		t.Error("pt-BR mole should use Portuguese text")
 	}
-	if !strings.Contains(result.Comments[0].Body, "Critico") {
+	if !strings.Contains(result.Comments[0].Body, "Crítico") {
 		t.Error("inline comment should use Portuguese severity label")
 	}
 }

@@ -146,6 +146,7 @@ func (s *Service) Execute(ctx context.Context, job queue.Job) error {
 		Instructions:   repoCfg.Instructions,
 		PreviousIssues: previousIssues,
 		Model:          model,
+		Language:       repoCfg.Language,
 	})
 	if err != nil {
 		s.saveReview(ctx, job, model, prInfo.Author, nil, nil, nil, err)

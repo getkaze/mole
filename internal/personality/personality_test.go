@@ -143,8 +143,8 @@ func TestSeverityLabel_EN(t *testing.T) {
 
 func TestSeverityLabel_PT(t *testing.T) {
 	e := New("mole", "pt-BR")
-	if got := e.SeverityLabel("critical"); got != "Critico" {
-		t.Errorf("label = %q, want Critico", got)
+	if got := e.SeverityLabel("critical"); got != "Crítico" {
+		t.Errorf("label = %q, want Crítico", got)
 	}
 }
 

@@ -9,7 +9,7 @@ func TestBuildPrompt_Standard(t *testing.T) {
 	diffs := []FileDiff{
 		{Filename: "main.go", Status: "modified", Patch: "+new line"},
 	}
-	system, user := BuildPrompt(diffs, "", "", "", false)
+	system, user := BuildPrompt(diffs, "", "", "", "", false)
 
 	if !strings.Contains(system, "Mole") {
 		t.Error("system prompt should mention Mole")
@@ -29,7 +29,7 @@ func TestBuildPrompt_Deep(t *testing.T) {
 	diffs := []FileDiff{
 		{Filename: "main.go", Status: "added", Patch: "+code"},
 	}
-	system, _ := BuildPrompt(diffs, "", "", "", true)
+	system, _ := BuildPrompt(diffs, "", "", "", "", true)
 
 	if !strings.Contains(system, "deep review") {
 		t.Error("deep prompt should mention deep review")
@@ -43,7 +43,7 @@ func TestBuildPrompt_WithContext(t *testing.T) {
 	diffs := []FileDiff{
 		{Filename: "a.go", Status: "modified", Patch: "+x"},
 	}
-	_, user := BuildPrompt(diffs, "project rules here", "", "", false)
+	_, user := BuildPrompt(diffs, "project rules here", "", "", "", false)
 
 	if !strings.Contains(user, "Project Context") {
 		t.Error("should include project context header")
@@ -57,7 +57,7 @@ func TestBuildPrompt_WithInstructions(t *testing.T) {
 	diffs := []FileDiff{
 		{Filename: "a.go", Status: "modified", Patch: "+x"},
 	}
-	_, user := BuildPrompt(diffs, "", "Always check for rate limiting", "", false)
+	_, user := BuildPrompt(diffs, "", "Always check for rate limiting", "", "", false)
 
 	if !strings.Contains(user, "Repository-Specific Instructions") {
 		t.Error("should include instructions header")
@@ -71,7 +71,7 @@ func TestBuildPrompt_NoInstructions(t *testing.T) {
 	diffs := []FileDiff{
 		{Filename: "a.go", Status: "modified", Patch: "+x"},
 	}
-	_, user := BuildPrompt(diffs, "", "", "", false)
+	_, user := BuildPrompt(diffs, "", "", "", "", false)
 
 	if strings.Contains(user, "Repository-Specific Instructions") {
 		t.Error("should not include instructions section when empty")
@@ -82,7 +82,7 @@ func TestBuildPrompt_TooLargeFile(t *testing.T) {
 	diffs := []FileDiff{
 		{Filename: "big.go", Status: "modified", Patch: "", TooLarge: true},
 	}
-	_, user := BuildPrompt(diffs, "", "", "", false)
+	_, user := BuildPrompt(diffs, "", "", "", "", false)
 
 	if !strings.Contains(user, "too large to display") {
 		t.Error("should note too-large file")
@@ -111,7 +111,7 @@ func TestBuildPrompt_EmptyPatch(t *testing.T) {
 	diffs := []FileDiff{
 		{Filename: "empty.go", Status: "modified", Patch: ""},
 	}
-	_, user := BuildPrompt(diffs, "", "", "", false)
+	_, user := BuildPrompt(diffs, "", "", "", "", false)
 
 	if strings.Contains(user, "empty.go") {
 		t.Error("empty patch (non-too-large) should be skipped")

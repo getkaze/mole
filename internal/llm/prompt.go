@@ -275,11 +275,15 @@ Also provide:
 Respond in JSON format only. No markdown wrapping. Example:
 {"summary":"...","comments":[{"file":"...","line":1,"category":"Security","subcategory":"SQL Injection","severity":"critical","message":"..."}],"suggestions":["..."],"diagrams":["sequenceDiagram\n    A->>B: call"]}`
 
-func BuildPrompt(diffs []FileDiff, projectContext string, instructions string, previousIssues string, deep bool) (system string, user string) {
+func BuildPrompt(diffs []FileDiff, projectContext string, instructions string, previousIssues string, language string, deep bool) (system string, user string) {
 	if deep {
 		system = deepSystemPrompt
 	} else {
 		system = standardSystemPrompt
+	}
+
+	if language != "" && language != "en" {
+		system += fmt.Sprintf("\n\nIMPORTANT: Write ALL review output (summary, comments, suggestions, diagrams) in %s. The JSON field names must remain in English, but all human-readable text values must be in %s.", languageName(language), languageName(language))
 	}
 
 	var b strings.Builder
@@ -353,6 +357,15 @@ func numberDiffLines(patch string) string {
 	}
 
 	return b.String()
+}
+
+func languageName(code string) string {
+	switch code {
+	case "pt-BR":
+		return "Brazilian Portuguese"
+	default:
+		return "English"
+	}
 }
 
 // parseNewStart extracts the new-file start line from a hunk header.

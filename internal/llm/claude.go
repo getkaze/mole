@@ -20,7 +20,7 @@ func NewClaude(apiKey string) *Claude {
 
 func (c *Claude) Review(ctx context.Context, req ReviewRequest) (*ReviewResponse, error) {
 	deep := strings.Contains(req.Model, "opus")
-	system, user := BuildPrompt(req.Diff, req.Context, req.Instructions, req.PreviousIssues, deep)
+	system, user := BuildPrompt(req.Diff, req.Context, req.Instructions, req.PreviousIssues, req.Language, deep)
 
 	if req.SystemPrompt != "" {
 		system = req.SystemPrompt
