@@ -38,10 +38,16 @@ type Dashboard struct {
 func New(s store.Store, cfg Config) (*Dashboard, error) {
 	pages := make(map[string]*template.Template)
 
+	// Template functions available to all templates
+	funcMap := template.FuncMap{
+		"formatTokens": formatTokens,
+		"shortModule":  shortModule,
+	}
+
 	// Parse each page template with its own copy of the layout
 	pageFiles := []string{"me.html", "team.html", "modules.html", "module.html", "developers.html", "developer.html", "costs.html", "about.html"}
 	for _, page := range pageFiles {
-		tmpl, err := template.ParseFS(templateFS,
+		tmpl, err := template.New("").Funcs(funcMap).ParseFS(templateFS,
 			"templates/layout.html",
 			"templates/"+page,
 		)
@@ -59,9 +65,6 @@ func New(s store.Store, cfg Config) (*Dashboard, error) {
 	pages["login.html"] = login
 
 	// Fragment templates
-	funcMap := template.FuncMap{
-		"formatTokens": formatTokens,
-	}
 	fragments, err := template.New("").Funcs(funcMap).ParseFS(templateFS, "templates/fragments/*.html")
 	if err != nil {
 		return nil, fmt.Errorf("parsing fragments: %w", err)
@@ -94,7 +97,7 @@ func (d *Dashboard) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /developers/{login}", d.requireAuth(d.handleDeveloper))
 	mux.HandleFunc("GET /team", d.requireAuth(d.handleTeam))
 	mux.HandleFunc("GET /modules", d.requireAuth(d.handleModules))
-	mux.HandleFunc("GET /modules/{name}", d.requireAuth(d.handleModule))
+	mux.HandleFunc("GET /modules/{name...}", d.requireAuth(d.handleModule))
 
 	// HTMX fragments — own dashboard
 	mux.HandleFunc("GET /me/issues", d.requireAuth(d.handleMeIssues))

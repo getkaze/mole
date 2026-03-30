@@ -15,9 +15,9 @@
     </div>
     <div class="modules-grid">
         {{range .Modules}}
-        <a href="/modules/{{.ModuleName}}?repo={{.Repo}}" style="text-decoration:none;">
+        <a href="/modules/{{.ModuleName}}?repo={{urlquery .Repo}}" style="text-decoration:none;">
             <div class="module-card">
-                <div class="module-name">{{.ModuleName}}</div>
+                <div class="module-name">{{shortModule .ModuleName}}</div>
 
                 <div>
                     <div class="progress-wrap" style="margin-bottom:6px;">

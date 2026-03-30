@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	molestore "github.com/getkaze/mole/internal/store"
@@ -662,6 +663,14 @@ func formatTokens(n int64) string {
 		return fmt.Sprintf("%.1fK", float64(n)/1_000)
 	}
 	return fmt.Sprintf("%d", n)
+}
+
+func shortModule(name string) string {
+	parts := strings.Split(name, "/")
+	if len(parts) <= 3 {
+		return name
+	}
+	return strings.Join(parts[len(parts)-3:], "/")
 }
 
 func parsePeriod(s string, defaultDays int) int {
