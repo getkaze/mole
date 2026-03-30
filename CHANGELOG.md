@@ -11,10 +11,10 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Dashboard
 
-- **Module cards** — show aggregated metrics (summed issues/debt, averaged health) instead of duplicating per weekly period
-- **Module detail** — weekly evolution chart and breakdown table when clicking a module card
-- **Module card overflow** — long module names now truncate with ellipsis instead of breaking the card layout
-- **Developer display names** — resolve GitHub profile names via cached `github_profiles` table, populated on OAuth login
+- **Module cards** — show aggregated metrics (summed issues/debt, averaged health) instead of duplicating per weekly period (@mateusmetzker)
+- **Module detail** — weekly evolution chart and breakdown table when clicking a module card (@mateusmetzker)
+- **Module card overflow** — long module names now truncate with ellipsis instead of breaking the card layout (@mateusmetzker)
+- **Developer display names** — resolve GitHub profile names via cached `github_profiles` table, populated on OAuth login (@mateusmetzker)
 
 ## [0.1.0] — 2026-03-29
 
