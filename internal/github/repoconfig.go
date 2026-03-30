@@ -32,14 +32,24 @@ type Layer struct {
 func LoadRepoConfig(ctx context.Context, client *gh.Client, owner, repo, ref string) (*RepoConfig, error) {
 	content, err := fetchFileContent(ctx, client, owner, repo, ".mole/config.yaml", ref)
 	if err != nil {
-		// Not found is fine — return defaults
-		return &RepoConfig{Language: "en"}, nil
+		// Not found is fine — return empty config (caller applies defaults)
+		return &RepoConfig{}, nil
 	}
 
-	cfg := &RepoConfig{Language: "en"}
+	cfg := &RepoConfig{}
 	if err := yaml.Unmarshal([]byte(content), cfg); err != nil {
 		return nil, fmt.Errorf("parsing .mole/config.yaml: %w", err)
 	}
 
 	return cfg, nil
+}
+
+// ApplyDefaults fills empty fields with the provided server-level defaults.
+func (rc *RepoConfig) ApplyDefaults(language, personality string) {
+	if rc.Language == "" {
+		rc.Language = language
+	}
+	if rc.Personality == "" {
+		rc.Personality = personality
+	}
 }

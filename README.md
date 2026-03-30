@@ -38,7 +38,7 @@ Review PR → Classify issues → Track patterns → Surface insights → Grow d
 - **Standard reviews** — lighter review with `/mole review` (Claude Sonnet)
 - **Ignore PRs** — skip reviews with `/mole ignore`
 - **CLI reviews** — review any PR from your terminal with `mole review owner/repo#123`
-- **Bot personality** — 3 modes: `mole` (playful), `formal` (professional), `minimal` (terse)
+- **Bot personality** — 3 modes: `mole` (playful), `formal` (professional), `minimal` (terse) — configurable server-wide or per-repo
 - **Issue taxonomy** — Security, Bugs, Smells, Architecture, Performance, Style (with subcategories)
 - **Quality score** — 0-100 per PR
 - **Architecture validation** — layer enforcement rules via AST analysis
@@ -302,6 +302,11 @@ worker:
 log:
   level: info                            # debug | info | warn | error
 
+# Server-level defaults (overridable per-repo via .mole/config.yaml)
+defaults:
+  language: en                           # en, pt-BR
+  personality: mole                      # mole, formal, minimal
+
 # Dashboard (optional)
 dashboard:
   github_client_id: ""
@@ -336,6 +341,8 @@ Every field can be overridden with environment variables using the `MOLE_` prefi
 | `MOLE_DASHBOARD_SESSION_SECRET` | `dashboard.session_secret` |
 | `MOLE_DASHBOARD_BASE_URL` | `dashboard.base_url` |
 | `MOLE_DASHBOARD_ALLOWED_ORG` | `dashboard.allowed_org` |
+| `MOLE_DEFAULTS_LANGUAGE` | `defaults.language` |
+| `MOLE_DEFAULTS_PERSONALITY` | `defaults.personality` |
 
 ---
 

@@ -94,7 +94,7 @@ func serveCmd() *cobra.Command {
 			ghFactory := ghclient.NewClientFactory(cfg.GitHub.AppID, cfg.GitHub.PrivateKeyPath)
 			provider := llm.NewClaude(cfg.LLM.APIKey)
 
-			svc := review.NewService(ghFactory, provider, st, cfg.LLM.ReviewModel, cfg.LLM.DeepReviewModel)
+			svc := review.NewService(ghFactory, provider, st, cfg.LLM.ReviewModel, cfg.LLM.DeepReviewModel, cfg.Defaults.Language, cfg.Defaults.Personality)
 
 			pool := worker.NewPool(q, svc.Execute, cfg.Worker.Count)
 
@@ -320,7 +320,7 @@ func reviewCmd() *cobra.Command {
 			ghFactory := ghclient.NewClientFactory(cfg.GitHub.AppID, cfg.GitHub.PrivateKeyPath)
 			provider := llm.NewClaude(cfg.LLM.APIKey)
 
-			svc := review.NewService(ghFactory, provider, st, cfg.LLM.ReviewModel, cfg.LLM.DeepReviewModel)
+			svc := review.NewService(ghFactory, provider, st, cfg.LLM.ReviewModel, cfg.LLM.DeepReviewModel, cfg.Defaults.Language, cfg.Defaults.Personality)
 
 			jobType := "standard"
 			if deep {

@@ -18,11 +18,13 @@ import (
 )
 
 type Service struct {
-	ghFactory *ghclient.ClientFactory
-	provider  llm.Provider
-	store     store.Store
-	sonnet    string
-	opus      string
+	ghFactory      *ghclient.ClientFactory
+	provider       llm.Provider
+	store          store.Store
+	sonnet         string
+	opus           string
+	defLanguage    string
+	defPersonality string
 }
 
 func NewService(
@@ -31,13 +33,17 @@ func NewService(
 	s store.Store,
 	sonnetModel string,
 	opusModel string,
+	defaultLanguage string,
+	defaultPersonality string,
 ) *Service {
 	return &Service{
-		ghFactory: ghFactory,
-		provider:  provider,
-		store:     s,
-		sonnet:    sonnetModel,
-		opus:      opusModel,
+		ghFactory:      ghFactory,
+		provider:       provider,
+		store:          s,
+		sonnet:         sonnetModel,
+		opus:           opusModel,
+		defLanguage:    defaultLanguage,
+		defPersonality: defaultPersonality,
 	}
 }
 
@@ -95,8 +101,9 @@ func (s *Service) Execute(ctx context.Context, job queue.Job) error {
 	repoCfg, err := ghclient.LoadRepoConfig(ctx, gh, owner, repo, baseRef)
 	if err != nil {
 		slog.Warn("failed to load repo config, using defaults", "error", err)
-		repoCfg = &ghclient.RepoConfig{Language: "en"}
+		repoCfg = &ghclient.RepoConfig{}
 	}
+	repoCfg.ApplyDefaults(s.defLanguage, s.defPersonality)
 
 	// Select model
 	model := s.sonnet

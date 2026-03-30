@@ -19,6 +19,10 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Module card names** — show only last 3 path segments instead of full module path for readability (@mateusmetzker)
 - **Module file breakdown** — module detail page now shows issues and debt items grouped by file (@mateusmetzker)
 
+### Configuration
+
+- **Server-level defaults** — `language` and `personality` can now be set in `mole.yaml` under `defaults`, applying to all repos unless overridden by `.mole/config.yaml` (@mateusmetzker)
+
 ### PR Review
 
 - **Deep review on PR open** — first review when a PR is opened now uses deep review (Claude Opus) instead of standard (@mateusmetzker)

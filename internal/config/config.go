@@ -18,6 +18,12 @@ type Config struct {
 	Worker   WorkerConfig    `yaml:"worker"`
 	Log      LogConfig       `yaml:"log"`
 	Dashboard DashboardConfig `yaml:"dashboard"`
+	Defaults  DefaultsConfig  `yaml:"defaults"`
+}
+
+type DefaultsConfig struct {
+	Language    string `yaml:"language"`    // en, pt-BR
+	Personality string `yaml:"personality"` // mole, formal, minimal
 }
 
 type DashboardConfig struct {
@@ -127,6 +133,12 @@ func (c *Config) applyDefaults() {
 	if c.Log.Level == "" {
 		c.Log.Level = "info"
 	}
+	if c.Defaults.Language == "" {
+		c.Defaults.Language = "en"
+	}
+	if c.Defaults.Personality == "" {
+		c.Defaults.Personality = "mole"
+	}
 	if c.LLM.ReviewModel == "" {
 		c.LLM.ReviewModel = "claude-sonnet-4-6"
 	}
@@ -211,6 +223,12 @@ func (c *Config) applyEnvOverrides() {
 	}
 	if v := os.Getenv("MOLE_DASHBOARD_ALLOWED_ORG"); v != "" {
 		c.Dashboard.AllowedOrg = v
+	}
+	if v := os.Getenv("MOLE_DEFAULTS_LANGUAGE"); v != "" {
+		c.Defaults.Language = v
+	}
+	if v := os.Getenv("MOLE_DEFAULTS_PERSONALITY"); v != "" {
+		c.Defaults.Personality = v
 	}
 }
 
