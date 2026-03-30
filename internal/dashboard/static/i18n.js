@@ -270,20 +270,20 @@
 
     var pageTitles = {
         'en': {
-            'dashboard': 'Dashboard',
-            'developers': 'Developers',
-            'team': 'Team',
-            'modules': 'Modules',
-            'costs': 'Costs',
-            'about': 'About'
+            'dashboard': 'dashboard',
+            'developers': 'developers',
+            'team': 'team',
+            'modules': 'modules',
+            'costs': 'costs',
+            'about': 'about'
         },
         'pt': {
-            'dashboard': 'Dashboard',
-            'developers': 'Desenvolvedores',
-            'team': 'Time',
-            'modules': 'Módulos',
-            'costs': 'Custos',
-            'about': 'Sobre'
+            'dashboard': 'dashboard',
+            'developers': 'desenvolvedores',
+            'team': 'time',
+            'modules': 'módulos',
+            'costs': 'custos',
+            'about': 'sobre'
         }
     };
 
@@ -308,7 +308,7 @@
         if (pageKey) {
             var titles = pageTitles[lang] || pageTitles['pt'];
             var translated = titles[pageKey] || pageKey;
-            document.title = 'mole — ' + translated;
+            document.title = 'Mole — ' + translated;
         }
     }
 
