@@ -1,0 +1,58 @@
+{{define "title"}}documentation{{end}}
+
+{{define "content"}}
+<div class="page-header">
+    <h1 class="page-title" data-i18n="page.documentation">Documentation</h1>
+    <p class="page-subtitle" data-i18n="page.documentation.subtitle">quick reference for Mole pull request commands</p>
+</div>
+
+<div class="docs-grid">
+    <div class="card docs-card">
+        <div class="card-header docs-header">
+            <div>
+                <div class="card-title" data-i18n="docs.review.title">Standard review</div>
+                <div class="card-subtitle" data-i18n="docs.review.subtitle">lighter review for pull requests</div>
+            </div>
+            <code class="docs-command">/mole review</code>
+        </div>
+        <p class="docs-text" data-i18n="docs.review.description">Runs the standard Mole review for the current pull request.</p>
+    </div>
+
+    <div class="card docs-card">
+        <div class="card-header docs-header">
+            <div>
+                <div class="card-title" data-i18n="docs.deep_review.title">Deep review</div>
+                <div class="card-subtitle" data-i18n="docs.deep_review.subtitle">full review with diagrams</div>
+            </div>
+            <code class="docs-command">/mole deep-review</code>
+        </div>
+        <p class="docs-text" data-i18n="docs.deep_review.description">Runs the deep Mole review for the current pull request, including diagrams.</p>
+    </div>
+
+    <div class="card docs-card docs-card-wide">
+        <div class="card-header docs-header">
+            <div>
+                <div class="card-title" data-i18n="docs.reactions.title">Reactions</div>
+                <div class="card-subtitle" data-i18n="docs.reactions.subtitle">validate inline review comments</div>
+            </div>
+        </div>
+        <p class="docs-text" data-i18n="docs.reactions.description">React to Mole inline comments to confirm issues or mark false positives.</p>
+        <div class="docs-reactions">
+            <div class="docs-reaction">
+                <span class="docs-emoji" aria-hidden="true">👍</span>
+                <div>
+                    <div class="docs-reaction-title" data-i18n="docs.reactions.up.title">Confirm issue</div>
+                    <div class="docs-reaction-text" data-i18n="docs.reactions.up.description">Use when Mole correctly identified a real issue.</div>
+                </div>
+            </div>
+            <div class="docs-reaction">
+                <span class="docs-emoji" aria-hidden="true">👎</span>
+                <div>
+                    <div class="docs-reaction-title" data-i18n="docs.reactions.down.title">False positive</div>
+                    <div class="docs-reaction-text" data-i18n="docs.reactions.down.description">Use when Mole flagged something that should not count as an issue.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{{end}}

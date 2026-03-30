@@ -8,6 +8,7 @@
             'nav.modules':           'Modules',
             'nav.costs':             'Costs',
             'nav.about':             'About',
+            'nav.documentation':     'Documentation',
             'nav.logout':            'logout',
             'label.navigation':      'navigation',
             'label.admin':           'admin',
@@ -18,6 +19,7 @@
             'page.modules':          'Modules',
             'page.costs':            'Costs',
             'page.about':            'About',
+            'page.documentation':    'Documentation',
 
             /* page subtitles */
             'page.me.subtitle':      'your review activity and growth',
@@ -28,6 +30,7 @@
             'page.module.subtitle':  'health score and debt tracking',
             'page.costs.subtitle':   'Claude API usage and estimated costs',
             'page.about.subtitle':   'application settings',
+            'page.documentation.subtitle': 'quick reference for Mole pull request commands',
 
             /* section labels */
             'section.overview':      'overview',
@@ -125,6 +128,21 @@
             'about.support':         'Support the Project',
             'about.support-desc':    'If Mole is useful to you, consider supporting its development.',
 
+            /* documentation page */
+            'docs.review.title':              'Standard review',
+            'docs.review.subtitle':           'lighter review for pull requests',
+            'docs.review.description':        'Runs the standard Mole review for the current pull request.',
+            'docs.deep_review.title':         'Deep review',
+            'docs.deep_review.subtitle':      'full review with diagrams',
+            'docs.deep_review.description':   'Runs the deep Mole review for the current pull request, including diagrams.',
+            'docs.reactions.title':           'Reactions',
+            'docs.reactions.subtitle':        'validate inline review comments',
+            'docs.reactions.description':     'React to Mole inline comments to confirm issues or mark false positives.',
+            'docs.reactions.up.title':        'Confirm issue',
+            'docs.reactions.up.description':  'Use when Mole correctly identified a real issue.',
+            'docs.reactions.down.title':      'False positive',
+            'docs.reactions.down.description':'Use when Mole flagged something that should not count as an issue.',
+
             /* login */
             'login.tagline':         'digs deep into code,<br>elevates those who write it.',
             'login.github-btn':      'Sign in with GitHub',
@@ -142,6 +160,7 @@
             'nav.modules':           'Módulos',
             'nav.costs':             'Custos',
             'nav.about':             'Sobre',
+            'nav.documentation':     'Documentação',
             'nav.logout':            'sair',
             'label.navigation':      'navegação',
             'label.admin':           'admin',
@@ -152,6 +171,7 @@
             'page.modules':          'Módulos',
             'page.costs':            'Custos',
             'page.about':            'Sobre',
+            'page.documentation':    'Documentação',
 
             /* page subtitles */
             'page.me.subtitle':      'sua atividade de review e crescimento',
@@ -162,6 +182,7 @@
             'page.module.subtitle':  'health score e debt tracking',
             'page.costs.subtitle':   'uso da API Claude e custos estimados',
             'page.about.subtitle':   'configurações da aplicação',
+            'page.documentation.subtitle': 'referência rápida para os comandos do Mole em pull requests',
 
             /* section labels */
             'section.overview':      'visão geral',
@@ -259,6 +280,21 @@
             'about.support':         'Apoie o Projeto',
             'about.support-desc':    'Se o Mole é útil para você, considere apoiar seu desenvolvimento.',
 
+            /* documentation page */
+            'docs.review.title':              'Review padrão',
+            'docs.review.subtitle':           'review mais leve para pull requests',
+            'docs.review.description':        'Executa o review padrão do Mole para o pull request atual.',
+            'docs.deep_review.title':         'Deep review',
+            'docs.deep_review.subtitle':      'review completo com diagramas',
+            'docs.deep_review.description':   'Executa o deep review do Mole para o pull request atual, incluindo diagramas.',
+            'docs.reactions.title':           'Reações',
+            'docs.reactions.subtitle':        'validam comentários inline de review',
+            'docs.reactions.description':     'Reaja aos comentários inline do Mole para confirmar issues ou marcar falsos positivos.',
+            'docs.reactions.up.title':        'Confirmar issue',
+            'docs.reactions.up.description':  'Use quando o Mole identificou corretamente um problema real.',
+            'docs.reactions.down.title':      'Falso positivo',
+            'docs.reactions.down.description':'Use quando o Mole sinalizou algo que não deve contar como issue.',
+
             /* login */
             'login.tagline':         'analisa código a fundo,<br>eleva quem o escreve.',
             'login.github-btn':      'Entrar com GitHub',
@@ -277,7 +313,8 @@
             'team': 'team',
             'modules': 'modules',
             'costs': 'costs',
-            'about': 'about'
+            'about': 'about',
+            'documentation': 'documentation'
         },
         'pt': {
             'dashboard': 'dashboard',
@@ -285,7 +322,8 @@
             'team': 'time',
             'modules': 'módulos',
             'costs': 'custos',
-            'about': 'sobre'
+            'about': 'sobre',
+            'documentation': 'documentação'
         }
     };
 
