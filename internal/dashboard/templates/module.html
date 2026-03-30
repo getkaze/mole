@@ -78,4 +78,30 @@
     </div>
 </div>
 {{end}}
+
+{{if .Module.Files}}
+<div class="section" style="margin-top:24px;">
+    <div class="section-header">
+        <span class="section-title" data-i18n="section.files">Arquivos</span>
+    </div>
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th data-i18n="col.file">Arquivo</th>
+                <th data-i18n="stat.issues">Issues</th>
+                <th data-i18n="stat.debt-items">Debt</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{range .Module.Files}}
+            <tr>
+                <td style="font-family:var(--mono);font-size:13px;">{{.FilePath}}</td>
+                <td>{{.TotalIssues}}</td>
+                <td {{if gt .DebtItems 0}}style="color:var(--warning)"{{end}}>{{.DebtItems}}</td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+{{end}}
 {{end}}

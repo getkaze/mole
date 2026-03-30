@@ -34,8 +34,8 @@ Review PR → Classify issues → Track patterns → Surface insights → Grow d
 
 ### PR Review Features
 
-- **Standard reviews** — triggered automatically on PR open, or manually with `/mole review`
-- **Deep reviews** — use Claude Opus for thorough analysis with `/mole deep-review`
+- **Deep reviews** — triggered automatically on PR open (Claude Opus), or manually with `/mole deep-review`
+- **Standard reviews** — lighter review with `/mole review` (Claude Sonnet)
 - **Ignore PRs** — skip reviews with `/mole ignore`
 - **CLI reviews** — review any PR from your terminal with `mole review owner/repo#123`
 - **Bot personality** — 3 modes: `mole` (playful), `formal` (professional), `minimal` (terse)

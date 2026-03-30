@@ -32,6 +32,7 @@
             /* section labels */
             'section.overview':      'overview',
             'section.period':        'period',
+            'section.files':         'Files',
 
             /* stat labels */
             'stat.score-trend':      'Score Trend',
@@ -165,6 +166,7 @@
             /* section labels */
             'section.overview':      'visão geral',
             'section.period':        'período',
+            'section.files':         'Arquivos',
 
             /* stat labels */
             'stat.score-trend':      'Tendência de Score',

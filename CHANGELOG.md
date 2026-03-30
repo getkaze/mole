@@ -17,6 +17,11 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Developer display names** — resolve GitHub profile names via cached `github_profiles` table, populated on OAuth login (@mateusmetzker)
 - **Module links broken** — fix routing for module names containing slashes by using wildcard path matching (@mateusmetzker)
 - **Module card names** — show only last 3 path segments instead of full module path for readability (@mateusmetzker)
+- **Module file breakdown** — module detail page now shows issues and debt items grouped by file (@mateusmetzker)
+
+### PR Review
+
+- **Deep review on PR open** — first review when a PR is opened now uses deep review (Claude Opus) instead of standard (@mateusmetzker)
 
 ## [0.1.0] — 2026-03-29
 

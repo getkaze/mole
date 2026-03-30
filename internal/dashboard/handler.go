@@ -54,6 +54,12 @@ type devOverview struct {
 	TopCategory string
 }
 
+type moduleFileView struct {
+	FilePath    string
+	TotalIssues int
+	DebtItems   int
+}
+
 type moduleView struct {
 	Repo        string
 	ModuleName  string
@@ -61,6 +67,7 @@ type moduleView struct {
 	TotalIssues int
 	DebtItems   int
 	Weeks       []moduleWeek
+	Files       []moduleFileView
 }
 
 type moduleWeek struct {
@@ -183,6 +190,44 @@ func (d *Dashboard) handleModule(w http.ResponseWriter, r *http.Request) {
 	}
 	avgHealth := healthSum / float64(len(metrics))
 
+	// Group issues by file
+	issues, err := d.store.GetIssuesByModule(r.Context(), repo, name, from, now)
+	if err != nil {
+		slog.Error("failed to get module issues", "error", err)
+	}
+
+	type fileAgg struct {
+		Total int
+		Debt  int
+	}
+	fileMap := make(map[string]*fileAgg)
+	var fileOrder []string
+	for _, issue := range issues {
+		if issue.Validation == "false_positive" {
+			continue
+		}
+		fp := issue.FilePath
+		agg, ok := fileMap[fp]
+		if !ok {
+			agg = &fileAgg{}
+			fileMap[fp] = agg
+			fileOrder = append(fileOrder, fp)
+		}
+		agg.Total++
+		if issue.Severity == "critical" {
+			agg.Debt++
+		}
+	}
+	files := make([]moduleFileView, 0, len(fileOrder))
+	for _, fp := range fileOrder {
+		agg := fileMap[fp]
+		files = append(files, moduleFileView{
+			FilePath:    fp,
+			TotalIssues: agg.Total,
+			DebtItems:   agg.Debt,
+		})
+	}
+
 	data := d.newPageData(r, "modules")
 	data.Module = moduleView{
 		Repo:        repo,
@@ -191,6 +236,7 @@ func (d *Dashboard) handleModule(w http.ResponseWriter, r *http.Request) {
 		TotalIssues: totalIssues,
 		DebtItems:   totalDebt,
 		Weeks:       weeks,
+		Files:       files,
 	}
 	d.renderPage(w, "module.html", data)
 }

@@ -109,7 +109,7 @@ func (h *WebhookHandler) handlePullRequest(ctx context.Context, payload []byte, 
 
 	job := queue.Job{
 		ID:         fmt.Sprintf("pr-%s-%d-%d", repo, prNumber, time.Now().UnixMilli()),
-		Type:       "standard",
+		Type:       "deep",
 		Repo:       repo,
 		PRNumber:   prNumber,
 		InstallID:  installID,
