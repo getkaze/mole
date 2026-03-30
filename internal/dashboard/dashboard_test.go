@@ -262,6 +262,9 @@ func TestDocumentationPage_AuthenticatedAccess(t *testing.T) {
 	if !strings.Contains(body, "/mole review") {
 		t.Error("should render documentation command")
 	}
+	if !strings.Contains(body, "/mole ignore") {
+		t.Error("should render ignore command")
+	}
 	if !strings.Contains(body, "sidebar-item active") {
 		t.Error("should render documentation sidebar item as active")
 	}
