@@ -11,6 +11,7 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Dashboard
 
+- **Kaze design system** — replace amber/Recursive palette with neutral Inter-based design system matching the Kaze landing page: new color tokens, layered shadows, glassmorphism topbar, blue brand color for data viz, and refined component spacing (@mateusmetzker)
 - **Module cards** — show aggregated metrics (summed issues/debt, averaged health) instead of duplicating per weekly period (@mateusmetzker)
 - **Module detail** — weekly evolution chart and breakdown table when clicking a module card (@mateusmetzker)
 - **Module card overflow** — long module names now truncate with ellipsis instead of breaking the card layout (@mateusmetzker)
