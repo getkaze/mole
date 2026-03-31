@@ -128,6 +128,10 @@
             /* login */
             'login.tagline':         'digs deep into code,<br>elevates those who write it.',
             'login.github-btn':      'Sign in with GitHub',
+            'login.dev-admin':       'Sign in as Admin',
+            'login.dev-dev':         'Sign in as Dev',
+            'login.dev-tech-lead':   'Sign in as Tech Lead',
+            'login.dev-manager':     'Sign in as Manager',
             'login.error-forbidden': 'Access restricted. You are not a member of the authorized organization.',
             'login.error-generic':   'Authentication error. Please try again.',
 
@@ -262,6 +266,10 @@
             /* login */
             'login.tagline':         'analisa código a fundo,<br>eleva quem o escreve.',
             'login.github-btn':      'Entrar com GitHub',
+            'login.dev-admin':       'Entrar como Admin',
+            'login.dev-dev':         'Entrar como Dev',
+            'login.dev-tech-lead':   'Entrar como Tech Lead',
+            'login.dev-manager':     'Entrar como Manager',
             'login.error-forbidden': 'Acesso restrito. Você não é membro da organização autorizada.',
             'login.error-generic':   'Erro ao autenticar. Tente novamente.',
 

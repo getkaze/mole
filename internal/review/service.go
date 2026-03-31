@@ -20,7 +20,7 @@ import (
 type Service struct {
 	gatewayFactory ghclient.GatewayFactory
 	provider       llm.Provider
-	store          store.Store // nil in local mode — persistence is skipped
+	store          store.Store
 	sonnet         string
 	opus           string
 	defLanguage    string
