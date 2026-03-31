@@ -1,0 +1,62 @@
+diff --git a/internal/config/loader.go b/internal/config/loader.go
+new file mode 100644
+--- /dev/null
++++ b/internal/config/loader.go
+@@ -0,0 +1,50 @@
++package config
++
++import (
++	"encoding/json"
++	"fmt"
++	"os"
++	"os/exec"
++	"path/filepath"
++)
++
++type AppConfig struct {
++	DatabaseURL string `json:"database_url"`
++	SecretKey   string `json:"secret_key"`
++	Debug       bool   `json:"debug"`
++	Port        int    `json:"port"`
++	AdminEmail  string `json:"admin_email"`
++}
++
++func LoadFromFile(path string) (*AppConfig, error) {
++	data, err := os.ReadFile(path)
++	if err != nil {
++		return nil, fmt.Errorf("reading config: %w", err)
++	}
++
++	var cfg AppConfig
++	if err := json.Unmarshal(data, &cfg); err != nil {
++		return nil, fmt.Errorf("parsing config: %w", err)
++	}
++
++	return &cfg, nil
++}
++
++func LoadFromEnv() *AppConfig {
++	return &AppConfig{
++		DatabaseURL: os.Getenv("DATABASE_URL"),
++		SecretKey:   os.Getenv("SECRET_KEY"),
++		Debug:       os.Getenv("DEBUG") == "true",
++		Port:        8080,
++		AdminEmail:  os.Getenv("ADMIN_EMAIL"),
++	}
++}
++
++func LoadFromVault(vaultPath string) (*AppConfig, error) {
++	cmd := exec.Command("vault", "read", "-format=json", vaultPath)
++	out, err := cmd.Output()
++	if err != nil {
++		return nil, fmt.Errorf("vault read: %w", err)
++	}
++
++	var cfg AppConfig
++	json.Unmarshal(out, &cfg)
++	return &cfg, nil
++}
++
++func ResolveConfigPath(name string) string {
++	return filepath.Join(os.Getenv("HOME"), ".config", "myapp", name)
++}

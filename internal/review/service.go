@@ -18,9 +18,9 @@ import (
 )
 
 type Service struct {
-	ghFactory      *ghclient.ClientFactory
+	gatewayFactory ghclient.GatewayFactory
 	provider       llm.Provider
-	store          store.Store
+	store          store.Store // nil in local mode — persistence is skipped
 	sonnet         string
 	opus           string
 	defLanguage    string
@@ -28,7 +28,7 @@ type Service struct {
 }
 
 func NewService(
-	ghFactory *ghclient.ClientFactory,
+	gatewayFactory ghclient.GatewayFactory,
 	provider llm.Provider,
 	s store.Store,
 	sonnetModel string,
@@ -37,7 +37,7 @@ func NewService(
 	defaultPersonality string,
 ) *Service {
 	return &Service{
-		ghFactory:      ghFactory,
+		gatewayFactory: gatewayFactory,
 		provider:       provider,
 		store:          s,
 		sonnet:         sonnetModel,
@@ -60,24 +60,14 @@ func (s *Service) Execute(ctx context.Context, job queue.Job) error {
 		return nil
 	}
 
-	// Parse owner/repo
-	parts := strings.SplitN(job.Repo, "/", 2)
-	if len(parts) != 2 {
-		return fmt.Errorf("invalid repo format: %s", job.Repo)
-	}
-	owner, repo := parts[0], parts[1]
-
-	// Get GitHub client
-	gh, err := s.ghFactory.Client(job.InstallID)
-	if err != nil {
-		return fmt.Errorf("getting github client: %w", err)
-	}
+	// Create gateway for this job's installation
+	gw := s.gatewayFactory(job.InstallID)
 
 	// Add 👀 reaction to signal review started
-	ghclient.AddReaction(ctx, gh, owner, repo, job.PRNumber, job.CommentID, "eyes")
+	gw.AddReaction(ctx, job.Repo, job.PRNumber, job.CommentID, "eyes")
 
 	// Get PR info (head SHA, base ref, author)
-	prInfo, err := ghclient.GetPRInfo(ctx, gh, owner, repo, job.PRNumber)
+	prInfo, err := gw.GetPRInfo(ctx, job.Repo, job.PRNumber)
 	if err != nil {
 		return fmt.Errorf("getting PR info: %w", err)
 	}
@@ -85,20 +75,20 @@ func (s *Service) Execute(ctx context.Context, job queue.Job) error {
 	baseRef := prInfo.BaseRef
 
 	// Fetch diff
-	diffs, err := ghclient.FetchDiff(ctx, gh, owner, repo, job.PRNumber)
+	diffs, err := gw.FetchDiff(ctx, job.Repo, job.PRNumber)
 	if err != nil {
 		return fmt.Errorf("fetching diff: %w", err)
 	}
 
 	// Load context files
-	ctxResult, err := ghclient.LoadContext(ctx, gh, owner, repo, baseRef)
+	ctxResult, err := gw.LoadContext(ctx, job.Repo, baseRef)
 	if err != nil {
 		slog.Warn("failed to load context files, continuing without", "error", err)
 		ctxResult = &ghclient.ContextResult{}
 	}
 
 	// Load per-repo config
-	repoCfg, err := ghclient.LoadRepoConfig(ctx, gh, owner, repo, baseRef)
+	repoCfg, err := gw.LoadRepoConfig(ctx, job.Repo, baseRef)
 	if err != nil {
 		slog.Warn("failed to load repo config, using defaults", "error", err)
 		repoCfg = &ghclient.RepoConfig{}
@@ -184,15 +174,15 @@ func (s *Service) Execute(ctx context.Context, job queue.Job) error {
 		})
 	}
 
-	// Post to GitHub
-	postResult, err := ghclient.PostReview(ctx, gh, owner, repo, job.PRNumber, headSHA, reviewData)
+	// Post review
+	postResult, err := gw.PostReview(ctx, job.Repo, job.PRNumber, headSHA, reviewData)
 	if err != nil {
 		s.saveReview(ctx, job, model, prInfo.Author, &prScore, result, nil, err)
 		return fmt.Errorf("posting review: %w", err)
 	}
 
 	// Add ✅ reaction to signal review complete
-	ghclient.AddReaction(ctx, gh, owner, repo, job.PRNumber, job.CommentID, "rocket")
+	gw.AddReaction(ctx, job.Repo, job.PRNumber, job.CommentID, "rocket")
 
 	// Save review record and persist issues (with GitHub comment IDs)
 	s.saveReview(ctx, job, model, prInfo.Author, &prScore, result, postResult, nil)

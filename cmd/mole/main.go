@@ -91,23 +91,36 @@ func serveCmd() *cobra.Command {
 			}
 			defer q.Close()
 
-			ghFactory := ghclient.NewClientFactory(cfg.GitHub.AppID, cfg.GitHub.PrivateKeyPath)
+			var gwFactory ghclient.GatewayFactory
+			if cfg.Server.Environment == "development" {
+				// Dev mode: no GitHub App, use a no-op gateway for workers
+				gwFactory = ghclient.NewLocalGatewayFactory(".")
+			} else {
+				ghFactory := ghclient.NewClientFactory(cfg.GitHub.AppID, cfg.GitHub.PrivateKeyPath)
+				gwFactory = ghclient.NewRemoteGatewayFactory(ghFactory)
+			}
 			provider := llm.NewClaude(cfg.LLM.APIKey)
 
-			svc := review.NewService(ghFactory, provider, st, cfg.LLM.ReviewModel, cfg.LLM.DeepReviewModel, cfg.Defaults.Language, cfg.Defaults.Personality)
+			svc := review.NewService(gwFactory, provider, st, cfg.LLM.ReviewModel, cfg.LLM.DeepReviewModel, cfg.Defaults.Language, cfg.Defaults.Personality)
 
 			pool := worker.NewPool(q, svc.Execute, cfg.Worker.Count)
 
 			var extras []server.RouteRegistrar
-			if cfg.Dashboard.Enabled() {
+			isDev := cfg.Server.Environment == "development"
+			if cfg.Dashboard.Enabled() || isDev {
+				sessionSecret := cfg.Dashboard.SessionSecret
+				if sessionSecret == "" && isDev {
+					sessionSecret = "dev-secret-not-for-production"
+				}
 				dash, err := dashboard.New(st, dashboard.Config{
 					GitHubClientID:     cfg.Dashboard.GitHubClientID,
 					GitHubClientSecret: cfg.Dashboard.GitHubClientSecret,
-					SessionSecret:      cfg.Dashboard.SessionSecret,
+					SessionSecret:      sessionSecret,
 					BaseURL:            cfg.Dashboard.BaseURL,
 					AllowedOrg:         cfg.Dashboard.AllowedOrg,
 					Pricing:            cfg.LLM.Pricing,
 					Version:            version,
+					Environment:        cfg.Server.Environment,
 				})
 				if err != nil {
 					return fmt.Errorf("dashboard: %w", err)
@@ -123,9 +136,15 @@ func serveCmd() *cobra.Command {
 
 			pool.Start(ctx)
 
-			reactionSyncer := aggregator.NewReactionSyncer(st, ghFactory)
-			agg := aggregator.New(st, time.Hour, aggregator.WithReactionSyncer(reactionSyncer))
-			go agg.Run(ctx)
+			if cfg.Server.Environment != "development" {
+				ghFactory := ghclient.NewClientFactory(cfg.GitHub.AppID, cfg.GitHub.PrivateKeyPath)
+				reactionSyncer := aggregator.NewReactionSyncer(st, ghFactory)
+				agg := aggregator.New(st, time.Hour, aggregator.WithReactionSyncer(reactionSyncer))
+				go agg.Run(ctx)
+			} else {
+				agg := aggregator.New(st, time.Hour)
+				go agg.Run(ctx)
+			}
 
 			go func() {
 				if err := srv.Start(); err != nil {
@@ -295,16 +314,76 @@ func reviewCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "review [owner/repo#pr]",
 		Short: "Review a pull request",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			deep, _ := cmd.Flags().GetBool("deep")
+			localDir, _ := cmd.Flags().GetString("local")
+
+			jobType := "standard"
+			if deep {
+				jobType = "deep"
+			}
+
+			// Local mode: read PR data from fixtures, skip GitHub
+			if localDir != "" {
+				cfg, err := config.LoadLocal(configPath)
+				if err != nil {
+					return err
+				}
+
+				setupLogging(cfg.Log.Level)
+
+				st, err := store.NewMySQL(cfg.MySQL.DSN())
+				if err != nil {
+					return fmt.Errorf("mysql: %w", err)
+				}
+				defer st.Close()
+
+				gwFactory := ghclient.NewLocalGatewayFactory(localDir)
+				provider := llm.NewClaude(cfg.LLM.APIKey)
+				svc := review.NewService(gwFactory, provider, st, cfg.LLM.ReviewModel, cfg.LLM.DeepReviewModel, cfg.Defaults.Language, cfg.Defaults.Personality)
+
+				// Read repo and PR number from fixtures if available
+				gw := ghclient.NewLocalGateway(localDir)
+				prInfo, err := gw.GetPRInfo(context.Background(), "", 0)
+				if err != nil {
+					return fmt.Errorf("reading pr.json: %w", err)
+				}
+
+				repo := "local/review"
+				prNumber := 1
+				if prInfo.Repo != "" {
+					repo = prInfo.Repo
+				}
+				if prInfo.PRNumber > 0 {
+					prNumber = prInfo.PRNumber
+				}
+
+				job := queue.Job{
+					ID:       fmt.Sprintf("local-%s", localDir),
+					Type:     jobType,
+					Repo:     repo,
+					PRNumber: prNumber,
+				}
+
+				fmt.Printf("Reviewing from %s (%s)...\n", localDir, jobType)
+				if err := svc.Execute(context.Background(), job); err != nil {
+					return fmt.Errorf("review failed: %w", err)
+				}
+				return nil
+			}
+
+			// Remote mode: full config required
+			if len(args) == 0 {
+				return fmt.Errorf("usage: mole review owner/repo#pr  or  mole review --local <dir>")
+			}
+
 			cfg, err := config.Load(configPath)
 			if err != nil {
 				return err
 			}
 
 			setupLogging(cfg.Log.Level)
-
-			deep, _ := cmd.Flags().GetBool("deep")
 
 			owner, repo, prNumber, err := parsePRRef(args[0])
 			if err != nil {
@@ -318,24 +397,18 @@ func reviewCmd() *cobra.Command {
 			defer st.Close()
 
 			ghFactory := ghclient.NewClientFactory(cfg.GitHub.AppID, cfg.GitHub.PrivateKeyPath)
+			gwFactory := ghclient.NewRemoteGatewayFactory(ghFactory)
 			provider := llm.NewClaude(cfg.LLM.APIKey)
 
-			svc := review.NewService(ghFactory, provider, st, cfg.LLM.ReviewModel, cfg.LLM.DeepReviewModel, cfg.Defaults.Language, cfg.Defaults.Personality)
+			svc := review.NewService(gwFactory, provider, st, cfg.LLM.ReviewModel, cfg.LLM.DeepReviewModel, cfg.Defaults.Language, cfg.Defaults.Personality)
 
-			jobType := "standard"
-			if deep {
-				jobType = "deep"
-			}
-
-			// For CLI, we need an installation ID. Use the first installation.
-			// In practice, the user should configure this or we detect it.
 			installID, _ := cmd.Flags().GetInt64("install-id")
 
 			job := queue.Job{
-				ID:       fmt.Sprintf("cli-%s/%s#%d", owner, repo, prNumber),
-				Type:     jobType,
-				Repo:     fmt.Sprintf("%s/%s", owner, repo),
-				PRNumber: prNumber,
+				ID:        fmt.Sprintf("cli-%s/%s#%d", owner, repo, prNumber),
+				Type:      jobType,
+				Repo:      fmt.Sprintf("%s/%s", owner, repo),
+				PRNumber:  prNumber,
 				InstallID: installID,
 			}
 
@@ -349,6 +422,7 @@ func reviewCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().Bool("deep", false, "use Claude Opus for deep review")
+	cmd.Flags().String("local", "", "read PR data from local fixtures directory (no GitHub needed)")
 	cmd.Flags().Int64("install-id", 0, "GitHub App installation ID")
 	return cmd
 }

@@ -1,0 +1,28 @@
+# Mole — Dev config (no GitHub App needed)
+# Copy to mole.yaml and fill in your Anthropic API key.
+#
+# Usage:
+#   mole serve                                                  # dashboard at localhost:8080
+#   mole review --local ./testdata/fixtures/01-auth-tokens/     # local review
+#   mole review --local ./testdata/fixtures/05-cache-layer/ --deep
+
+server:
+  port: 8080
+  environment: development   # bypasses GitHub OAuth, enables dev login
+
+llm:
+  api_key: "sk-ant-..."
+
+mysql:
+  host: localhost
+  port: 3306
+  database: mole
+  user: mole
+  password: mole
+
+valkey:
+  host: localhost
+  port: 6379
+
+log:
+  level: debug

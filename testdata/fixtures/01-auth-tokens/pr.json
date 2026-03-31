@@ -1,0 +1,7 @@
+{
+  "head_sha": "a1b2c3d4e5f6",
+  "base_ref": "main",
+  "author": "lucasmendes",
+  "repo": "acme/backend-api",
+  "pr_number": 42
+}

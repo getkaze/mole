@@ -33,6 +33,10 @@ valkey:
 
 server:
   port: 8080
+  # development | production (default: production)
+  # In development mode, the dashboard login bypasses GitHub OAuth
+  # and provides role-based test logins (admin, dev, tech_lead, manager).
+  environment: production
 
 worker:
   # Number of concurrent review workers

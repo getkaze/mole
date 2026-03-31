@@ -1,0 +1,66 @@
+diff --git a/internal/api/router.go b/internal/api/router.go
+new file mode 100644
+--- /dev/null
++++ b/internal/api/router.go
+@@ -0,0 +1,56 @@
++package api
++
++import (
++	"encoding/json"
++	"fmt"
++	"net/http"
++)
++
++type Router struct {
++	mux *http.ServeMux
++}
++
++func NewRouter() *Router {
++	r := &Router{mux: http.NewServeMux()}
++	r.registerRoutes()
++	return r
++}
++
++func (r *Router) registerRoutes() {
++	r.mux.HandleFunc("/api/v1/health", r.health)
++	r.mux.HandleFunc("/api/v1/users", r.listUsers)
++	r.mux.HandleFunc("/api/v1/users/create", r.createUser)
++	r.mux.HandleFunc("/api/v1/admin/reset", r.adminReset)
++}
++
++func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
++	w.Header().Set("Access-Control-Allow-Origin", "*")
++	w.Header().Set("Access-Control-Allow-Methods", "*")
++	w.Header().Set("Access-Control-Allow-Headers", "*")
++	r.mux.ServeHTTP(w, req)
++}
++
++func (r *Router) health(w http.ResponseWriter, _ *http.Request) {
++	json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
++}
++
++func (r *Router) listUsers(w http.ResponseWriter, req *http.Request) {
++	page := req.URL.Query().Get("page")
++	if page == "" {
++		page = "1"
++	}
++	// TODO: actually query database
++	json.NewEncoder(w).Encode(map[string]string{"page": page, "users": "[]"})
++}
++
++func (r *Router) createUser(w http.ResponseWriter, req *http.Request) {
++	if req.Method != "POST" {
++		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
++		return
++	}
++
++	var body map[string]interface{}
++	json.NewDecoder(req.Body).Decode(&body)
++
++	fmt.Fprintf(w, `{"id": 1, "created": true, "data": %v}`, body)
++}
++
++func (r *Router) adminReset(w http.ResponseWriter, _ *http.Request) {
++	// Reset all data — useful for development
++	fmt.Fprintf(w, `{"reset": true}`)
++}
