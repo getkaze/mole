@@ -55,12 +55,6 @@ func Format(resp *llm.ReviewResponse, engine *personality.Engine, score int) *Fo
 		}
 	}
 
-	// Clean PR message
-	if len(resp.Comments) == 0 {
-		body.WriteString(engine.CleanPR())
-		body.WriteString("\n")
-	}
-
 	// Inline comments
 	comments := make([]FormattedComment, 0, len(resp.Comments))
 	for _, c := range resp.Comments {
