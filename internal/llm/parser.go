@@ -19,10 +19,9 @@ type rawComment struct {
 }
 
 type rawResponse struct {
-	Summary     string       `json:"summary"`
-	Comments    []rawComment `json:"comments"`
-	Suggestions []string     `json:"suggestions"`
-	Diagrams    []string     `json:"diagrams"`
+	Summary  string       `json:"summary"`
+	Comments []rawComment `json:"comments"`
+	Diagrams []string     `json:"diagrams"`
 }
 
 func ParseResponse(raw string) (*ReviewResponse, error) {
@@ -43,9 +42,8 @@ func ParseResponse(raw string) (*ReviewResponse, error) {
 	}
 
 	resp := &ReviewResponse{
-		Summary:     rr.Summary,
-		Suggestions: rr.Suggestions,
-		Diagrams:    rr.Diagrams,
+		Summary:  rr.Summary,
+		Diagrams: rr.Diagrams,
 	}
 
 	for _, rc := range rr.Comments {
@@ -62,9 +60,6 @@ func ParseResponse(raw string) (*ReviewResponse, error) {
 
 	if resp.Comments == nil {
 		resp.Comments = []InlineComment{}
-	}
-	if resp.Suggestions == nil {
-		resp.Suggestions = []string{}
 	}
 	if resp.Diagrams == nil {
 		resp.Diagrams = []string{}

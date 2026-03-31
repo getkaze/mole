@@ -39,9 +39,10 @@ Review PR → Classify issues → Track patterns → Surface insights → Grow d
 - **Ignore PRs** — skip reviews with `/mole ignore`
 - **CLI reviews** — review any PR from your terminal with `mole review owner/repo#123`
 - **Bot personality** — 3 modes: `mole` (playful), `formal` (professional), `minimal` (terse) — configurable server-wide or per-repo
-- **Localized reviews** — full review output (issues, suggestions, summary) in the configured language, not just the UI chrome
+- **Localized reviews** — full review output (issues, summary) in the configured language, not just the UI chrome
 - **Issue taxonomy** — Security, Bugs, Smells, Architecture, Performance, Style (with subcategories)
-- **Quality score** — 0-100 per PR
+- **Two severity levels** — Critical (🔴) and Attention (🟡) only — no low-value suggestions
+- **Quality score** — 0-100 per PR (critical = -8, attention = -5)
 - **Architecture validation** — layer enforcement rules via AST analysis
 - **Security scanner** — AST-based detection of common vulnerabilities
 - **Mermaid diagrams** — sequence and class diagrams in deep reviews

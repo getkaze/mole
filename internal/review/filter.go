@@ -9,9 +9,8 @@ import (
 
 // severityRank maps severity to a numeric rank for comparison and sorting.
 var severityRank = map[string]int{
-	"critical":   3,
-	"attention":  2,
-	"suggestion": 1,
+	"critical":  2,
+	"attention": 1,
 }
 
 // FilterComments applies min severity, ignore patterns, and max comments cap.

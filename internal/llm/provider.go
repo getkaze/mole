@@ -31,11 +31,10 @@ type FileDiff struct {
 }
 
 type ReviewResponse struct {
-	Summary     string          `json:"summary"`
-	Comments    []InlineComment `json:"comments"`
-	Suggestions []string        `json:"suggestions"`
-	Diagrams    []string        `json:"diagrams"`
-	Usage       TokenUsage
+	Summary  string          `json:"summary"`
+	Comments []InlineComment `json:"comments"`
+	Diagrams []string        `json:"diagrams"`
+	Usage    TokenUsage
 }
 
 type InlineComment struct {
@@ -43,7 +42,7 @@ type InlineComment struct {
 	Line        int    `json:"line"`
 	Category    string `json:"category"`    // Security, Bugs, Smells, Architecture, Performance, Style
 	Subcategory string `json:"subcategory"` // e.g. SQL Injection, Race Condition, Deep Nesting
-	Severity    string `json:"severity"`    // critical, attention, suggestion
+	Severity    string `json:"severity"`    // critical, attention
 	Message     string `json:"message"`
 }
 

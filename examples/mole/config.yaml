@@ -8,8 +8,8 @@ language: en
 # Personality mode: mole (playful), formal (professional), minimal (terse)
 personality: mole
 
-# Minimum severity to show in PR comments: suggestion, attention, critical
-# min_severity: suggestion
+# Minimum severity to show in PR comments: attention, critical
+# min_severity: attention
 
 # Maximum inline comments per review (0 = unlimited)
 # max_inline_comments: 10
