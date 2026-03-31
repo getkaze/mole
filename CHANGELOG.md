@@ -9,9 +9,17 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Developer Experience
+
+- **GitHub Gateway interface** — abstract all GitHub API calls behind a `Gateway` interface with `RemoteGateway` (production) and `LocalGateway` (fixtures from disk), enabling development and testing without a GitHub App (@mateusmetzker)
+- **Local review mode** — `mole review --local <dir>` reads PR data from fixture files, calls Claude, and prints the formatted review to stdout + `output.md`, no GitHub needed (@mateusmetzker)
+- **Development mode** — `server.environment: development` bypasses GitHub OAuth on the dashboard login, showing role-based test logins (Admin, Dev, Tech Lead, Manager) with a fixed `testuser` account (@mateusmetzker)
+- **Test fixtures** — 12 sample PRs across 3 repos and 5 developers with intentional issues (SQL injection, XSS, credential leaks, etc.) for local review testing (@mateusmetzker)
+
 ### Dashboard
 
 - **Kaze design system** — replace amber/Recursive palette with neutral Inter-based design system matching the Kaze landing page: new color tokens, layered shadows, glassmorphism topbar, blue brand color for data viz, and refined component spacing (@mateusmetzker)
+- **Remove Architect role** — consolidate access roles to Dev, Tech Lead, Manager, Admin (@mateusmetzker)
 - **Module cards** — show aggregated metrics (summed issues/debt, averaged health) instead of duplicating per weekly period (@mateusmetzker)
 - **Module detail** — weekly evolution chart and breakdown table when clicking a module card (@mateusmetzker)
 - **Module card overflow** — long module names now truncate with ellipsis instead of breaking the card layout (@mateusmetzker)

@@ -139,6 +139,10 @@ mole review owner/repo#123
 mole review owner/repo#123 --deep
 mole review owner/repo#123 --install-id 12345
 
+# Review from local fixtures (no GitHub App needed)
+mole review --local ./testdata/fixtures/01-auth-tokens/
+mole review --local ./testdata/fixtures/05-cache-layer/ --deep
+
 # Sync reactions, recalculate scores, and update metrics
 mole sync
 
@@ -239,6 +243,17 @@ dashboard:
 
 Create a GitHub OAuth App (separate from the GitHub App) at [github.com/settings/developers](https://github.com/settings/developers) with callback URL `http://your-server/auth/callback`.
 
+### Development Mode
+
+For local development without GitHub OAuth, set `server.environment: development` in your config:
+
+```yaml
+server:
+  environment: development
+```
+
+The login page shows role-based test logins (Admin, Dev, Tech Lead, Manager) instead of GitHub OAuth. All logins use a fixed `testuser` / `Test User` account. See `mole.yaml.dev.example` for a minimal dev config.
+
 ### Access Control
 
 By default, any authenticated GitHub user can log in. Set `allowed_org` to restrict access to members of a specific GitHub organization — only users who belong to that org will be allowed in.
@@ -257,7 +272,6 @@ Can also be set via the `MOLE_DASHBOARD_ALLOWED_ORG` environment variable.
 |------|----------|-------------|-------------------|---------|-------|
 | Dev | Yes | Yes (anonymous) | No | Yes | No |
 | Tech Lead | Yes | Yes | Yes (opt-in) | Yes | No |
-| Architect | Yes | Yes | Yes (opt-in) | Yes | No |
 | Manager | No | Yes | No | Yes | No |
 | Admin | Yes | Yes | Yes | Yes | Yes |
 
@@ -296,6 +310,7 @@ valkey:
 
 server:
   port: 8080
+  environment: production            # development | production
 
 worker:
   count: 3
@@ -335,6 +350,7 @@ Every field can be overridden with environment variables using the `MOLE_` prefi
 | `MOLE_VALKEY_HOST` | `valkey.host` |
 | `MOLE_VALKEY_PORT` | `valkey.port` |
 | `MOLE_SERVER_PORT` | `server.port` |
+| `MOLE_SERVER_ENVIRONMENT` | `server.environment` |
 | `MOLE_WORKER_COUNT` | `worker.count` |
 | `MOLE_LOG_LEVEL` | `log.level` |
 | `MOLE_DASHBOARD_GITHUB_CLIENT_ID` | `dashboard.github_client_id` |

@@ -114,7 +114,41 @@ func (d *Dashboard) handleAuthCallback(w http.ResponseWriter, r *http.Request) {
 
 func (d *Dashboard) handleAuthLogin(w http.ResponseWriter, r *http.Request) {
 	errParam := r.URL.Query().Get("error")
-	d.pages["login.html"].ExecuteTemplate(w, "login", map[string]any{"Error": errParam})
+	d.pages["login.html"].ExecuteTemplate(w, "login", map[string]any{
+		"Error": errParam,
+		"Dev":   d.config.IsDev(),
+	})
+}
+
+func (d *Dashboard) handleAuthDev(w http.ResponseWriter, r *http.Request) {
+	if !d.config.IsDev() {
+		http.Error(w, "not found", http.StatusNotFound)
+		return
+	}
+
+	role := r.URL.Query().Get("role")
+	if role == "" {
+		role = "admin"
+	}
+
+	user := "testuser"
+	displayName := "Test User"
+
+	d.store.UpsertAccess(r.Context(), &molestore.DashboardAccess{
+		GitHubUser: user,
+		Role:       role,
+	})
+	d.store.UpsertGitHubProfile(r.Context(), user, displayName)
+
+	session := sessionData{
+		User:        user,
+		DisplayName: displayName,
+		ExpiresAt:   time.Now().Add(time.Duration(sessionMaxAge) * time.Second),
+	}
+	d.setSession(w, session)
+
+	slog.Info("dev login", "user", user, "role", role)
+	http.Redirect(w, r, "/me", http.StatusTemporaryRedirect)
 }
 
 func (d *Dashboard) handleLogout(w http.ResponseWriter, r *http.Request) {
