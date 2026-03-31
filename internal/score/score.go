@@ -2,9 +2,8 @@ package score
 
 // Weights per severity level.
 const (
-	criticalPenalty   = 15
-	attentionPenalty  = 5
-	suggestionPenalty = 1
+	criticalPenalty  = 8
+	attentionPenalty = 5
 )
 
 // Comment is the minimal interface needed for scoring.
@@ -21,8 +20,6 @@ func Calculate(comments []Comment) int {
 			score -= criticalPenalty
 		case "attention":
 			score -= attentionPenalty
-		case "suggestion":
-			score -= suggestionPenalty
 		}
 	}
 	if score < 0 {

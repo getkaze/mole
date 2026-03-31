@@ -3,7 +3,7 @@ package llm
 import "testing"
 
 func TestParseResponse_ValidJSON(t *testing.T) {
-	raw := `{"summary":"looks good","comments":[{"file":"a.go","line":10,"category":"style","severity":"info","message":"nit"}],"suggestions":["add tests"]}`
+	raw := `{"summary":"looks good","comments":[{"file":"a.go","line":10,"category":"Security","severity":"critical","message":"bad"}]}`
 	resp, err := ParseResponse(raw)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -17,13 +17,10 @@ func TestParseResponse_ValidJSON(t *testing.T) {
 	if resp.Comments[0].File != "a.go" {
 		t.Errorf("comment file = %q, want %q", resp.Comments[0].File, "a.go")
 	}
-	if len(resp.Suggestions) != 1 {
-		t.Errorf("suggestions = %d, want 1", len(resp.Suggestions))
-	}
 }
 
 func TestParseResponse_WithCodeFence(t *testing.T) {
-	raw := "```json\n{\"summary\":\"ok\",\"comments\":[],\"suggestions\":[]}\n```"
+	raw := "```json\n{\"summary\":\"ok\",\"comments\":[]}\n```"
 	resp, err := ParseResponse(raw)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -41,9 +38,6 @@ func TestParseResponse_NilFieldsInitialized(t *testing.T) {
 	}
 	if resp.Comments == nil {
 		t.Error("comments should be initialized, not nil")
-	}
-	if resp.Suggestions == nil {
-		t.Error("suggestions should be initialized, not nil")
 	}
 	if resp.Diagrams == nil {
 		t.Error("diagrams should be initialized, not nil")
@@ -69,7 +63,7 @@ func TestParseResponse_WithSubcategory(t *testing.T) {
 }
 
 func TestParseResponse_MissingSubcategory(t *testing.T) {
-	raw := `{"summary":"ok","comments":[{"file":"a.go","line":1,"category":"style","severity":"suggestion","message":"nit"}]}`
+	raw := `{"summary":"ok","comments":[{"file":"a.go","line":1,"category":"Bugs","severity":"attention","message":"potential issue"}]}`
 	resp, err := ParseResponse(raw)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
