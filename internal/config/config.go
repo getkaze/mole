@@ -75,7 +75,8 @@ type ValkeyConfig struct {
 }
 
 type ServerConfig struct {
-	Port int `yaml:"port"`
+	Port        int    `yaml:"port"`
+	Environment string `yaml:"environment"` // development, production (default: production)
 }
 
 type WorkerConfig struct {
@@ -126,6 +127,9 @@ func (c *Config) applyDefaults() {
 	}
 	if c.Server.Port == 0 {
 		c.Server.Port = 8080
+	}
+	if c.Server.Environment == "" {
+		c.Server.Environment = "production"
 	}
 	if c.Worker.Count == 0 {
 		c.Worker.Count = 3
@@ -206,6 +210,9 @@ func (c *Config) applyEnvOverrides() {
 			c.Worker.Count = n
 		}
 	}
+	if v := os.Getenv("MOLE_SERVER_ENVIRONMENT"); v != "" {
+		c.Server.Environment = v
+	}
 	if v := os.Getenv("MOLE_LOG_LEVEL"); v != "" {
 		c.Log.Level = v
 	}
@@ -232,17 +239,57 @@ func (c *Config) applyEnvOverrides() {
 	}
 }
 
+// LoadLocal loads config for local review mode. Validates LLM and MySQL
+// fields but does not require GitHub credentials or Valkey.
+func LoadLocal(path string) (*Config, error) {
+	cfg := &Config{}
+
+	data, err := os.ReadFile(path)
+	if err == nil {
+		if err := yaml.Unmarshal(data, cfg); err != nil {
+			return nil, fmt.Errorf("parsing config file: %w", err)
+		}
+	} else if !os.IsNotExist(err) {
+		return nil, fmt.Errorf("reading config file %s: %w", path, err)
+	}
+
+	cfg.applyDefaults()
+	cfg.applyEnvOverrides()
+
+	var missing []string
+	if cfg.LLM.APIKey == "" {
+		missing = append(missing, "llm.api_key")
+	}
+	if cfg.MySQL.Host == "" {
+		missing = append(missing, "mysql.host")
+	}
+	if cfg.MySQL.Database == "" {
+		missing = append(missing, "mysql.database")
+	}
+	if cfg.MySQL.User == "" {
+		missing = append(missing, "mysql.user")
+	}
+	if len(missing) > 0 {
+		return nil, fmt.Errorf("missing required config fields: %s", strings.Join(missing, ", "))
+	}
+
+	return cfg, nil
+}
+
 func (c *Config) validate() error {
 	var missing []string
 
-	if c.GitHub.AppID == 0 {
-		missing = append(missing, "github.app_id")
-	}
-	if c.GitHub.PrivateKeyPath == "" {
-		missing = append(missing, "github.private_key_path")
-	}
-	if c.GitHub.WebhookSecret == "" {
-		missing = append(missing, "github.webhook_secret")
+	// GitHub fields are only required in production
+	if c.Server.Environment != "development" {
+		if c.GitHub.AppID == 0 {
+			missing = append(missing, "github.app_id")
+		}
+		if c.GitHub.PrivateKeyPath == "" {
+			missing = append(missing, "github.private_key_path")
+		}
+		if c.GitHub.WebhookSecret == "" {
+			missing = append(missing, "github.webhook_secret")
+		}
 	}
 	if c.LLM.APIKey == "" {
 		missing = append(missing, "llm.api_key")

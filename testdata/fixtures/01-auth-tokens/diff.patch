@@ -1,0 +1,81 @@
+diff --git a/internal/auth/token.go b/internal/auth/token.go
+new file mode 100644
+--- /dev/null
++++ b/internal/auth/token.go
+@@ -0,0 +1,42 @@
++package auth
++
++import (
++	"crypto/rand"
++	"encoding/hex"
++	"fmt"
++	"time"
++)
++
++type Token struct {
++	Value     string
++	UserID    int64
++	ExpiresAt time.Time
++}
++
++func GenerateToken(userID int64) (*Token, error) {
++	bytes := make([]byte, 32)
++	_, err := rand.Read(bytes)
++	if err != nil {
++		return nil, fmt.Errorf("generating token: %w", err)
++	}
++
++	return &Token{
++		Value:     hex.EncodeToString(bytes),
++		UserID:    userID,
++		ExpiresAt: time.Now().Add(24 * time.Hour),
++	}, nil
++}
++
++func ValidateToken(token string) bool {
++	if len(token) == 0 {
++		return false
++	}
++	// TODO: check expiry and signature
++	return true
++}
++
++func RevokeToken(token string) error {
++	// TODO: implement revocation
++	fmt.Println("revoking token: " + token)
++	return nil
++}
+diff --git a/internal/auth/middleware.go b/internal/auth/middleware.go
+new file mode 100644
+--- /dev/null
++++ b/internal/auth/middleware.go
+@@ -0,0 +1,28 @@
++package auth
++
++import (
++	"net/http"
++	"strings"
++)
++
++func Middleware(next http.Handler) http.Handler {
++	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
++		header := r.Header.Get("Authorization")
++		if header == "" {
++			http.Error(w, "unauthorized", http.StatusUnauthorized)
++			return
++		}
++
++		token := strings.TrimPrefix(header, "Bearer ")
++		if !ValidateToken(token) {
++			http.Error(w, "invalid token", http.StatusUnauthorized)
++			return
++		}
++
++		next.ServeHTTP(w, r)
++	})
++}
++
++func extractUserID(token string) (int64, error) {
++	// TODO: decode token and extract user ID
++	return 0, nil
++}

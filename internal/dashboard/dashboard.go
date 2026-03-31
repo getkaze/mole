@@ -25,6 +25,12 @@ type Config struct {
 	AllowedOrg         string                `yaml:"allowed_org"`
 	Pricing            map[string][2]float64 // model -> [input, output] per 1M tokens
 	Version            string
+	Environment        string // "development" or "production"
+}
+
+// IsDev returns true when running in development mode.
+func (c Config) IsDev() bool {
+	return c.Environment == "development"
 }
 
 // Dashboard holds the handlers and dependencies.
@@ -88,6 +94,7 @@ func (d *Dashboard) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /auth/login", d.handleAuthLogin)
 	mux.HandleFunc("GET /auth/github", d.handleAuthGitHub)
 	mux.HandleFunc("GET /auth/callback", d.handleAuthCallback)
+	mux.HandleFunc("GET /auth/dev", d.handleAuthDev)
 	mux.HandleFunc("GET /auth/logout", d.handleLogout)
 
 	// Pages (auth required)

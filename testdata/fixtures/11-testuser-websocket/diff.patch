@@ -1,0 +1,66 @@
+diff --git a/internal/ws/hub.go b/internal/ws/hub.go
+new file mode 100644
+--- /dev/null
++++ b/internal/ws/hub.go
+@@ -0,0 +1,58 @@
++package ws
++
++import (
++	"log"
++	"net/http"
++	"sync"
++
++	"golang.org/x/net/websocket"
++)
++
++type Hub struct {
++	clients map[*websocket.Conn]bool
++	mu      sync.Mutex
++}
++
++var globalHub = &Hub{
++	clients: make(map[*websocket.Conn]bool),
++}
++
++func GetHub() *Hub {
++	return globalHub
++}
++
++func (h *Hub) HandleWS(w http.ResponseWriter, r *http.Request) {
++	websocket.Handler(func(conn *websocket.Conn) {
++		h.mu.Lock()
++		h.clients[conn] = true
++		h.mu.Unlock()
++
++		defer func() {
++			h.mu.Lock()
++			delete(h.clients, conn)
++			h.mu.Unlock()
++			conn.Close()
++		}()
++
++		for {
++			var msg string
++			err := websocket.Message.Receive(conn, &msg)
++			if err != nil {
++				break
++			}
++			log.Printf("ws message from %s: %s", conn.RemoteAddr(), msg)
++			h.Broadcast(msg)
++		}
++	}).ServeHTTP(w, r)
++}
++
++func (h *Hub) Broadcast(message string) {
++	h.mu.Lock()
++	defer h.mu.Unlock()
++
++	for conn := range h.clients {
++		err := websocket.Message.Send(conn, message)
++		if err != nil {
++			log.Printf("failed to send to %s: %v", conn.RemoteAddr(), err)
++			conn.Close()
++			delete(h.clients, conn)
++		}
++	}
++}
