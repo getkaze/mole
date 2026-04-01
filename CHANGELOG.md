@@ -15,6 +15,7 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **Local review mode** — `mole review --local <dir>` reads PR data from fixture files, calls Claude, and prints the formatted review to stdout + `output.md`, no GitHub needed (@mateusmetzker)
 - **Development mode** — `server.environment: development` bypasses GitHub OAuth on the dashboard login, showing role-based test logins (Admin, Dev, Tech Lead, Manager) with a fixed `testuser` account (@mateusmetzker)
 - **Test fixtures** — 12 sample PRs across 3 repos and 5 developers with intentional issues (SQL injection, XSS, credential leaks, etc.) for local review testing (@mateusmetzker)
+- **Localized init** — `mole init --language pt-BR` generates architecture and conventions docs in the specified language; the language is also saved to `.mole/config.yaml` (@mateusmetzker)
 
 ### Dashboard
 

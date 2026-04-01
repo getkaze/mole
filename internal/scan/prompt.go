@@ -1,6 +1,13 @@
 package scan
 
-const InitSystemPrompt = `You are Mole, an AI code reviewer assistant. Your task is to analyze a repository scan and generate context documentation that will help you review pull requests more effectively in the future.
+// BuildInitPrompt returns the system prompt for mole init, localized to the given language.
+func BuildInitPrompt(language string) string {
+	lang := "English"
+	if language == "pt-BR" || language == "pt" {
+		lang = "Brazilian Portuguese"
+	}
+
+	return `You are Mole, an AI code reviewer assistant. Your task is to analyze a repository scan and generate context documentation that will help you review pull requests more effectively in the future.
 
 You will receive a structured scan of a repository including: tech stack, directory structure, configuration files, and code samples.
 
@@ -26,7 +33,7 @@ Describe:
 ## Rules
 - Be specific to THIS codebase — don't write generic advice
 - Keep each document under 3000 characters
-- Write in English
+- Write in ` + lang + `
 - Base everything on evidence from the scan — don't invent patterns you can't see
 - Use markdown headers and bullet points for readability
 
@@ -38,3 +45,4 @@ Respond with exactly this structure (no extra text before or after):
 ---CONVENTIONS---
 (content of conventions.md)
 ---END---`
+}

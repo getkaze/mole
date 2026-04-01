@@ -30,6 +30,7 @@ func initCmd() *cobra.Command {
 			}
 
 			dryRun, _ := cmd.Flags().GetBool("dry-run")
+			language, _ := cmd.Flags().GetString("language")
 
 			// Step 1: Local scan
 			fmt.Printf("Scanning %s...\n", repoPath)
@@ -52,7 +53,7 @@ func initCmd() *cobra.Command {
 			provider := llm.NewClaude(cfg.LLM.APIKey)
 
 			raw, err := provider.Generate(cmd.Context(), llm.GenerateRequest{
-				System: scan.InitSystemPrompt,
+				System: scan.BuildInitPrompt(language),
 				User:   report,
 				Model:  cfg.LLM.ReviewModel,
 			})
@@ -71,10 +72,15 @@ func initCmd() *cobra.Command {
 				return fmt.Errorf("creating .mole/: %w", err)
 			}
 
+			cfgLang := "en"
+			if language == "pt-BR" || language == "pt" {
+				cfgLang = language
+			}
+
 			files := map[string]string{
 				"architecture.md": output.Architecture,
 				"conventions.md":  output.Conventions,
-				"config.yaml":    "# Mole per-repository configuration\nlanguage: en\n",
+				"config.yaml":    fmt.Sprintf("# Mole per-repository configuration\nlanguage: %s\n", cfgLang),
 			}
 
 			for name, content := range files {
@@ -98,5 +104,6 @@ func initCmd() *cobra.Command {
 	}
 
 	cmd.Flags().Bool("dry-run", false, "show scan report without calling LLM or writing files")
+	cmd.Flags().String("language", "en", "language for generated docs (en, pt-BR)")
 	return cmd
 }

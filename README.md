@@ -132,6 +132,7 @@ mole health
 
 # Scan a repo and generate .mole/ context files
 mole init /path/to/repo
+mole init /path/to/repo --language pt-BR
 
 # Review a PR from the CLI
 mole review owner/repo#123
@@ -226,6 +227,7 @@ Generate context files automatically:
 
 ```bash
 mole init /path/to/repo
+mole init /path/to/repo --language pt-BR   # generate docs in Portuguese
 ```
 
 ---
