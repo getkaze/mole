@@ -822,6 +822,7 @@ tbody td {
    17. TREND CHART
    ══════════════════════════════════════════ */
 
+/* Bar chart (used by module evolution) */
 .trend-chart {
     display: flex;
     align-items: flex-end;
@@ -850,6 +851,37 @@ tbody td {
 .trend-bar.green  { background: var(--success); }
 .trend-bar.yellow { background: var(--warning); }
 .trend-bar.red    { background: var(--danger); }
+
+/* Line chart (score trend) */
+.trend-line-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    height: 140px;
+}
+
+.trend-svg {
+    width: 100%;
+    flex: 1;
+}
+
+.trend-dot.green  { fill: var(--success); }
+.trend-dot.yellow { fill: var(--warning); }
+.trend-dot.red    { fill: var(--danger); }
+
+.trend-score {
+    font-size: 10px;
+    fill: var(--muted);
+    text-anchor: middle;
+    font-weight: 600;
+    font-family: var(--sans);
+}
+
+.trend-labels {
+    display: flex;
+    justify-content: space-between;
+    padding: 0 16px;
+}
 
 .trend-label {
     font-size: 10px;

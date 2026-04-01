@@ -35,8 +35,8 @@
                 <div class="card-subtitle" data-i18n="card.distribution-30d">distribuição dos últimos 30 dias</div>
             </div>
             <div class="period-selector">
-                <button class="period-btn active" hx-get="/me/issues?period=30d" hx-target="#me-issues" hx-swap="innerHTML" onclick="setPeriodActive(this)">30d</button>
                 <button class="period-btn" hx-get="/me/issues?period=7d" hx-target="#me-issues" hx-swap="innerHTML" onclick="setPeriodActive(this)">7d</button>
+                <button class="period-btn active" hx-get="/me/issues?period=30d" hx-target="#me-issues" hx-swap="innerHTML" onclick="setPeriodActive(this)">30d</button>
                 <button class="period-btn" hx-get="/me/issues?period=90d" hx-target="#me-issues" hx-swap="innerHTML" onclick="setPeriodActive(this)">90d</button>
             </div>
         </div>
@@ -51,7 +51,12 @@
         <div class="card-header">
             <div>
                 <div class="card-title" data-i18n="card.score-trend">Tendência de Score</div>
-                <div class="card-subtitle" data-i18n="card.weekly-90d">evolução semanal dos últimos 90 dias</div>
+                <div class="card-subtitle" data-i18n="card.weekly-delta">variação semanal de pontos</div>
+            </div>
+            <div class="period-selector">
+                <button class="period-btn" hx-get="/me/trends?period=30d" hx-target="#me-trends" hx-swap="innerHTML" onclick="setPeriodActive(this)">30d</button>
+                <button class="period-btn" hx-get="/me/trends?period=60d" hx-target="#me-trends" hx-swap="innerHTML" onclick="setPeriodActive(this)">60d</button>
+                <button class="period-btn active" hx-get="/me/trends?period=90d" hx-target="#me-trends" hx-swap="innerHTML" onclick="setPeriodActive(this)">90d</button>
             </div>
         </div>
         <div id="me-trends" hx-get="/me/trends?period=90d" hx-trigger="load" hx-swap="innerHTML">

@@ -1,11 +1,21 @@
 {{if .Weeks}}
-<div class="trend-chart">
-    {{range .Weeks}}
-    <div class="trend-bar-wrap">
-        <div class="trend-bar {{.Color}}" style="height:{{.Height}}%"></div>
+<div class="trend-line-chart">
+    <svg viewBox="0 0 {{.SvgW}} {{.SvgH}}" class="trend-svg">
+        <!-- trend line -->
+        <polyline points="{{.Points}}" fill="none" stroke="var(--brand)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+        {{range .Weeks}}
+        <g>
+            <circle cx="{{.X}}" cy="{{.Y}}" r="4" class="trend-dot {{.Color}}"/>
+            <text x="{{.X}}" y="{{.Y}}" dy="-8" class="trend-score">{{.Score | printf "%.0f"}}</text>
+            <title>{{.Label}}: {{.Text}}</title>
+        </g>
+        {{end}}
+    </svg>
+    <div class="trend-labels">
+        {{range .Weeks}}
         <span class="trend-label">{{.Label}}</span>
+        {{end}}
     </div>
-    {{end}}
 </div>
 {{else}}
 <div class="empty-state">

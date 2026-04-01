@@ -391,10 +391,13 @@ type categoryCount struct {
 }
 
 type weekData struct {
-	Label  string
-	Score  float64
-	Height float64
-	Color  string
+	Label string
+	Score float64
+	Delta float64
+	X     float64
+	Y     float64
+	Color string
+	Text  string // formatted: "72 pts (+3)"
 }
 
 type badgeView struct {
@@ -436,30 +439,111 @@ func (d *Dashboard) renderIssuesFragment(w http.ResponseWriter, r *http.Request,
 
 func (d *Dashboard) renderTrendsFragment(w http.ResponseWriter, r *http.Request, developer string) {
 	now := time.Now()
-	from := now.AddDate(0, 0, -90)
+	days := parsePeriod(r.URL.Query().Get("period"), 90)
+	from := now.AddDate(0, 0, -days)
 
 	metrics, err := d.store.GetDevMetrics(r.Context(), developer, "weekly", from, now)
 	if err != nil {
 		slog.Error("failed to get dev metrics", "error", err)
 	}
 
-	var weeks []weekData
+	// Group metrics by ISO week (Monday) so multiple DB rows in
+	// the same week are averaged into a single data point.
+	type weekBucket struct {
+		monday time.Time
+		sum    float64
+		count  int
+	}
+	bucketIdx := make(map[string]int) // "2006-01-02" -> index
+	var buckets []weekBucket
 	for _, m := range metrics {
+		mon := isoMonday(m.PeriodStart)
+		key := mon.Format("2006-01-02")
+		if idx, ok := bucketIdx[key]; ok {
+			buckets[idx].sum += m.AvgScore
+			buckets[idx].count++
+		} else {
+			bucketIdx[key] = len(buckets)
+			buckets = append(buckets, weekBucket{monday: mon, sum: m.AvgScore, count: 1})
+		}
+	}
+
+	// Compute weekly deltas (difference from previous week).
+	var weeks []weekData
+	for i, b := range buckets {
+		avg := b.sum / float64(b.count)
+		delta := 0.0
+		if i > 0 {
+			prevAvg := buckets[i-1].sum / float64(buckets[i-1].count)
+			delta = avg - prevAvg
+		}
 		color := "green"
-		if m.AvgScore < 70 {
+		if avg < 70 {
 			color = "red"
-		} else if m.AvgScore < 90 {
+		} else if avg < 90 {
 			color = "yellow"
 		}
+		text := fmt.Sprintf("%.0f pts (%+.0f)", avg, delta)
+		if i == 0 {
+			text = fmt.Sprintf("%.0f pts", avg)
+		}
 		weeks = append(weeks, weekData{
-			Label:  m.PeriodStart.Format("Jan 2"),
-			Score:  m.AvgScore,
-			Height: m.AvgScore,
-			Color:  color,
+			Label: b.monday.Format("Jan 2"),
+			Score: avg,
+			Delta: delta,
+			Color: color,
+			Text:  text,
 		})
 	}
 
-	d.renderFragment(w, "trends.html", map[string]any{"Weeks": weeks})
+	// Calculate SVG coordinates for the line chart.
+	const svgW, svgH = 500.0, 120.0
+	const padX, padY = 20.0, 20.0
+
+	// Find min/max score for Y-axis scaling.
+	minS, maxS := weeks[0].Score, weeks[0].Score
+	for _, w := range weeks {
+		if w.Score < minS {
+			minS = w.Score
+		}
+		if w.Score > maxS {
+			maxS = w.Score
+		}
+	}
+	// Add padding so dots aren't at the very edge.
+	margin := (maxS - minS) * 0.15
+	if margin < 2 {
+		margin = 2
+	}
+	minS -= margin
+	maxS += margin
+	rangeS := maxS - minS
+
+	n := len(weeks)
+	var points string
+	for i := range weeks {
+		var x float64
+		if n == 1 {
+			x = svgW / 2
+		} else {
+			x = padX + float64(i)*(svgW-2*padX)/float64(n-1)
+		}
+		// Map score to Y: maxS at top, minS at bottom.
+		y := padY + (svgH-2*padY)*(maxS-weeks[i].Score)/rangeS
+		weeks[i].X = x
+		weeks[i].Y = y
+		if i > 0 {
+			points += " "
+		}
+		points += fmt.Sprintf("%.1f,%.1f", x, y)
+	}
+
+	d.renderFragment(w, "trends.html", map[string]any{
+		"Weeks":  weeks,
+		"Points": points,
+		"SvgW":   svgW,
+		"SvgH":   svgH,
+	})
 }
 
 func (d *Dashboard) renderBadgesFragment(w http.ResponseWriter, r *http.Request, developer string) {
@@ -716,6 +800,16 @@ func formatTokens(n int64) string {
 	return fmt.Sprintf("%d", n)
 }
 
+// isoMonday returns the Monday 00:00:00 of the ISO week containing t.
+func isoMonday(t time.Time) time.Time {
+	wd := t.Weekday()
+	if wd == time.Sunday {
+		wd = 7
+	}
+	d := t.AddDate(0, 0, -int(wd-time.Monday))
+	return time.Date(d.Year(), d.Month(), d.Day(), 0, 0, 0, 0, t.Location())
+}
+
 func shortModule(name string) string {
 	parts := strings.Split(name, "/")
 	if len(parts) <= 3 {
@@ -730,6 +824,8 @@ func parsePeriod(s string, defaultDays int) int {
 		return 7
 	case "30d":
 		return 30
+	case "60d":
+		return 60
 	case "90d":
 		return 90
 	default:

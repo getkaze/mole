@@ -118,10 +118,12 @@ func (a *Aggregator) aggregate(ctx context.Context) {
 
 	now := time.Now()
 
-	// Weekly: last 7 days
-	weekStart := now.AddDate(0, 0, -7)
-	a.aggregateDevMetrics(ctx, "weekly", weekStart, now)
-	a.aggregateModuleMetrics(ctx, "weekly", weekStart, now)
+	// Weekly: current ISO week (Monday–Sunday)
+	monday := isoMonday(now)
+	sunday := monday.AddDate(0, 0, 6)
+	sundayEnd := time.Date(sunday.Year(), sunday.Month(), sunday.Day(), 23, 59, 59, 0, now.Location())
+	a.aggregateDevMetrics(ctx, "weekly", monday, sundayEnd)
+	a.aggregateModuleMetrics(ctx, "weekly", monday, sundayEnd)
 
 	// Monthly: last 30 days
 	monthStart := now.AddDate(0, 0, -30)
@@ -236,6 +238,16 @@ func (a *Aggregator) getActiveDevelopers(ctx context.Context, from, to time.Time
 
 func (a *Aggregator) getActiveModules(ctx context.Context, from, to time.Time) ([]store.RepoModule, error) {
 	return a.store.ListActiveModules(ctx, from, to)
+}
+
+// isoMonday returns the Monday 00:00:00 of the ISO week containing t.
+func isoMonday(t time.Time) time.Time {
+	wd := t.Weekday()
+	if wd == time.Sunday {
+		wd = 7
+	}
+	d := t.AddDate(0, 0, -int(wd-time.Monday))
+	return time.Date(d.Year(), d.Month(), d.Day(), 0, 0, 0, 0, t.Location())
 }
 
 func filterConfirmed(issues []store.Issue) []store.Issue {

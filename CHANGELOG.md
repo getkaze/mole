@@ -18,6 +18,8 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Dashboard
 
+- **Score trend line chart** — replace bar chart with SVG line chart showing weekly score evolution with score labels, colored dots (green ≥90, yellow 70-89, red <70), delta tooltips, and period filters (30d/60d/90d). Aggregator now uses ISO week boundaries (Monday–Sunday) instead of rolling 7-day windows (@mateusmetzker)
+- **Issues filter order** — reorder period filter buttons to 7d → 30d → 90d on both dashboard pages (@mateusmetzker)
 - **Kaze design system** — replace amber/Recursive palette with neutral Inter-based design system matching the Kaze landing page: new color tokens, layered shadows, glassmorphism topbar, blue brand color for data viz, and refined component spacing (@mateusmetzker)
 - **Remove Architect role** — consolidate access roles to Dev, Tech Lead, Manager, Admin (@mateusmetzker)
 - **Module cards** — show aggregated metrics (summed issues/debt, averaged health) instead of duplicating per weekly period (@mateusmetzker)
