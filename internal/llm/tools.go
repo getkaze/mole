@@ -14,8 +14,10 @@ import (
 const (
 	maxFileSize       = 100 * 1024 // 100KB per file read
 	maxSearchFileSize = 512 * 1024 // 512KB per file for search (skip larger files)
-	maxSearchMatches  = 50
-	maxRegexLen       = 500 // max length for user-provided regex patterns
+	maxSearchMatches    = 50
+	maxSearchResultSize = 50 * 1024 // 50KB max total search result size
+	maxMatchLineLen     = 500       // truncate individual match lines
+	maxRegexLen         = 500       // max length for user-provided regex patterns
 )
 
 // ToolExecutor executes exploration tools sandboxed within a worktree directory.
@@ -192,6 +194,7 @@ func (te *ToolExecutor) searchCode(input json.RawMessage) (string, bool) {
 	}
 
 	var matches []string
+	var totalSize int
 	_ = filepath.WalkDir(te.root, func(path string, d os.DirEntry, err error) error {
 		if err != nil {
 			return nil
@@ -202,7 +205,7 @@ func (te *ToolExecutor) searchCode(input json.RawMessage) (string, bool) {
 			}
 			return nil
 		}
-		if len(matches) >= maxSearchMatches {
+		if len(matches) >= maxSearchMatches || totalSize >= maxSearchResultSize {
 			return filepath.SkipAll
 		}
 
@@ -234,11 +237,17 @@ func (te *ToolExecutor) searchCode(input json.RawMessage) (string, bool) {
 
 		lines := strings.Split(string(data), "\n")
 		for i, line := range lines {
-			if len(matches) >= maxSearchMatches {
+			if len(matches) >= maxSearchMatches || totalSize >= maxSearchResultSize {
 				break
 			}
 			if re.MatchString(line) {
-				matches = append(matches, fmt.Sprintf("%s:%d: %s", rel, i+1, strings.TrimSpace(line)))
+				trimmed := strings.TrimSpace(line)
+				if len(trimmed) > maxMatchLineLen {
+					trimmed = trimmed[:maxMatchLineLen] + "..."
+				}
+				entry := fmt.Sprintf("%s:%d: %s", rel, i+1, trimmed)
+				matches = append(matches, entry)
+				totalSize += len(entry)
 			}
 		}
 

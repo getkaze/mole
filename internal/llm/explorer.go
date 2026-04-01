@@ -76,6 +76,12 @@ func (e *Explorer) Explore(ctx context.Context, req ExploreRequest) (*ExploreRes
 			Tools:    tools,
 		})
 		if err != nil {
+			// If context overflow (400), ask for a summary without tools using a fresh call
+			if strings.Contains(err.Error(), "prompt is too long") || strings.Contains(err.Error(), "400") {
+				slog.Warn("explorer: context overflow, requesting summary from collected context",
+					"turn", turnsUsed+1, "error", err)
+				return e.recoverSummary(ctx, systemPrompt, messages, totalUsage, turnsUsed)
+			}
 			return nil, fmt.Errorf("explorer API call (turn %d): %w", turnsUsed+1, err)
 		}
 
@@ -168,6 +174,75 @@ func (e *Explorer) Explore(ctx context.Context, req ExploreRequest) (*ExploreRes
 	return &ExploreResult{
 		Context:   finalText,
 		TurnsUsed: turnsUsed + 1,
+		Usage:     totalUsage,
+	}, nil
+}
+
+// recoverSummary handles context overflow by extracting text from the conversation
+// history and asking the model for a summary in a fresh, shorter call.
+func (e *Explorer) recoverSummary(ctx context.Context, systemPrompt string, messages []anthropic.MessageParam, totalUsage TokenUsage, turnsUsed int) (*ExploreResult, error) {
+	// Extract all text content the model produced across turns
+	var collected strings.Builder
+	for _, msg := range messages {
+		if msg.Role != "assistant" {
+			continue
+		}
+		for _, block := range msg.Content {
+			if block.OfText != nil {
+				collected.WriteString(block.OfText.Text)
+				collected.WriteString("\n\n")
+			}
+		}
+	}
+
+	if collected.Len() == 0 {
+		return &ExploreResult{
+			TurnsUsed: turnsUsed,
+			Usage:     totalUsage,
+		}, nil
+	}
+
+	// Truncate to fit in a single call
+	text := collected.String()
+	if len(text) > 50000 {
+		text = text[:50000] + "\n\n[truncated]"
+	}
+
+	resp, err := e.client.Messages.New(ctx, anthropic.MessageNewParams{
+		Model:     e.model,
+		MaxTokens: 8192,
+		System: []anthropic.TextBlockParam{
+			{Text: "You are a code exploration assistant. Summarize the context you collected into a structured format suitable for a code reviewer.", Type: "text"},
+		},
+		Messages: []anthropic.MessageParam{
+			anthropic.NewUserMessage(anthropic.NewTextBlock(
+				"Here are the notes from your exploration so far. Produce a final context summary:\n\n" + text,
+			)),
+		},
+	})
+	if err != nil {
+		// If even the recovery fails, return what we have raw
+		slog.Warn("explorer: recovery summary failed, returning raw context", "error", err)
+		return &ExploreResult{
+			Context:   text,
+			TurnsUsed: turnsUsed,
+			Usage:     totalUsage,
+		}, nil
+	}
+
+	totalUsage.InputTokens += int(resp.Usage.InputTokens)
+	totalUsage.OutputTokens += int(resp.Usage.OutputTokens)
+
+	var finalText string
+	for _, block := range resp.Content {
+		if block.Type == "text" {
+			finalText += block.Text
+		}
+	}
+
+	return &ExploreResult{
+		Context:   finalText,
+		TurnsUsed: turnsUsed,
 		Usage:     totalUsage,
 	}, nil
 }
