@@ -25,7 +25,7 @@ valkey:
   port: 6379
 
 log:
-  level: debug
+  level: info
 
 # Codebase exploration (optional — requires git installed)
 # Uncomment to enable Haiku-powered codebase exploration before reviews.
@@ -33,5 +33,5 @@ log:
 #   base_path: "/tmp/mole/repos"
 #
 # exploration:
-#   max_turns: 25
+#   max_turns: 10
 #   model: "claude-sonnet-4-6"

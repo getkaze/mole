@@ -61,7 +61,7 @@ defaults:
 #   base_path: "/var/lib/mole/repos"
 #
 # exploration:
-#   max_turns: 25                        # max Haiku tool use turns (default: 25)
+#   max_turns: 10                        # max Haiku tool use turns (default: 25)
 #   model: "claude-sonnet-4-6"            # exploration model (default: claude-sonnet-4-6)
 
 # Dashboard
