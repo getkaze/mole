@@ -412,16 +412,17 @@ button { cursor: pointer; font-family: inherit; font-size: inherit; }
     height: 100%;
 }
 
-.docs-card-wide {
-    grid-column: 1 / -1;
-}
-
-.docs-header {
+.docs-card-body {
+    display: flex;
+    flex-direction: column;
     align-items: flex-start;
-    gap: 16px;
+    gap: 12px;
+    margin-bottom: 16px;
 }
 
 .docs-command {
+    display: inline-flex;
+    align-items: center;
     font-family: var(--mono);
     font-size: 12px;
     font-weight: 600;
@@ -431,6 +432,7 @@ button { cursor: pointer; font-family: inherit; font-size: inherit; }
     border-radius: 999px;
     padding: 6px 10px;
     white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .docs-text {
