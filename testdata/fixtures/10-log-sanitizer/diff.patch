@@ -1,0 +1,52 @@
+diff --git a/internal/log/sanitizer.go b/internal/log/sanitizer.go
+new file mode 100644
+--- /dev/null
++++ b/internal/log/sanitizer.go
+@@ -0,0 +1,44 @@
++package log
++
++import (
++	"fmt"
++	"os"
++	"strings"
++	"time"
++)
++
++var logFile *os.File
++
++func Init(path string) {
++	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
++	if err != nil {
++		panic(err)
++	}
++	logFile = f
++}
++
++func Log(level, message string, fields map[string]interface{}) {
++	timestamp := time.Now().Format("2006-01-02 15:04:05")
++	line := fmt.Sprintf("[%s] %s: %s", timestamp, level, message)
++
++	for k, v := range fields {
++		line += fmt.Sprintf(" %s=%v", k, v)
++	}
++
++	fmt.Fprintln(logFile, line)
++}
++
++func LogError(err error, context string) {
++	Log("ERROR", context, map[string]interface{}{
++		"error": err.Error(),
++		"stack": fmt.Sprintf("%+v", err),
++	})
++}
++
++func Sanitize(input string) string {
++	s := input
++	s = strings.ReplaceAll(s, "\n", " ")
++	s = strings.ReplaceAll(s, "\r", " ")
++	return s
++}
++
++func LogUserAction(userID int64, action, details string) {
++	Log("AUDIT", action, map[string]interface{}{"user_id": userID, "details": details})
++}

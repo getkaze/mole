@@ -8,7 +8,7 @@ kite.yaml
 
 # Helm
 .helm/
-agents/
+/agents/
 rules/
 schemas/
 .claude/

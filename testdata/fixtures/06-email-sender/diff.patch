@@ -1,0 +1,80 @@
+diff --git a/internal/notify/email.go b/internal/notify/email.go
+new file mode 100644
+--- /dev/null
++++ b/internal/notify/email.go
+@@ -0,0 +1,55 @@
++package notify
++
++import (
++	"fmt"
++	"net/smtp"
++	"os"
++)
++
++type EmailSender struct {
++	host     string
++	port     int
++	user     string
++	password string
++}
++
++func NewEmailSender() *EmailSender {
++	return &EmailSender{
++		host:     os.Getenv("SMTP_HOST"),
++		port:     587,
++		user:     os.Getenv("SMTP_USER"),
++		password: os.Getenv("SMTP_PASSWORD"),
++	}
++}
++
++func (s *EmailSender) Send(to, subject, body string) error {
++	addr := fmt.Sprintf("%s:%d", s.host, s.port)
++	auth := smtp.PlainAuth("", s.user, s.password, s.host)
++
++	msg := fmt.Sprintf("From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n%s",
++		s.user, to, subject, body)
++
++	err := smtp.SendMail(addr, auth, s.user, []string{to}, []byte(msg))
++	if err != nil {
++		fmt.Printf("ERROR: failed to send email to %s: %v\n", to, err)
++		return err
++	}
++
++	fmt.Printf("email sent to %s: %s\n", to, subject)
++	return nil
++}
++
++func (s *EmailSender) SendBatch(recipients []string, subject, body string) {
++	for _, r := range recipients {
++		s.Send(r, subject, body)
++	}
++}
++
++func (s *EmailSender) SendWelcome(email, name string) error {
++	body := fmt.Sprintf("Hello %s,\n\nWelcome to our platform!\n\nYour login: %s\nPassword: check your registration email\n\nBest regards", name, email)
++	return s.Send(email, "Welcome!", body)
++}
+diff --git a/internal/notify/slack.go b/internal/notify/slack.go
+new file mode 100644
+--- /dev/null
++++ b/internal/notify/slack.go
+@@ -0,0 +1,18 @@
++package notify
++
++import (
++	"bytes"
++	"encoding/json"
++	"net/http"
++	"os"
++)
++
++func SendSlack(message string) error {
++	webhook := os.Getenv("SLACK_WEBHOOK_URL")
++	payload, _ := json.Marshal(map[string]string{"text": message})
++	resp, err := http.Post(webhook, "application/json", bytes.NewReader(payload))
++	if err != nil {
++		return err
++	}
++	resp.Body.Close()
++	return nil
++}

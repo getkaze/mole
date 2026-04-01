@@ -129,8 +129,8 @@ func TestSeverityBadge(t *testing.T) {
 	if got := e.SeverityBadge("attention"); got != "🟡" {
 		t.Errorf("attention badge = %q, want 🟡", got)
 	}
-	if got := e.SeverityBadge("suggestion"); got != "🟢" {
-		t.Errorf("suggestion badge = %q, want 🟢", got)
+	if got := e.SeverityBadge("suggestion"); got != "🟡" {
+		t.Errorf("suggestion badge should fallback to attention = %q, want 🟡", got)
 	}
 }
 

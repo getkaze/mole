@@ -1,0 +1,56 @@
+diff --git a/internal/user/service.go b/internal/user/service.go
+modified file mode 100644
+--- a/internal/user/service.go
++++ b/internal/user/service.go
+@@ -1,10 +1,58 @@
+ package user
+
++import (
++	"context"
++	"errors"
++	"fmt"
++	"log"
++	"regexp"
++)
++
++type Service struct {
++	repo Repository
++}
++
++func NewService(repo Repository) *Service {
++	return &Service{repo: repo}
++}
++
++func (s *Service) Register(ctx context.Context, name, email, password string) (*User, error) {
++	if name == "" || email == "" || password == "" {
++		return nil, errors.New("all fields required")
++	}
++
++	matched, _ := regexp.MatchString(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`, email)
++	if !matched {
++		return nil, errors.New("invalid email")
++	}
++
++	existing, _ := s.repo.FindByEmail(ctx, email)
++	if existing != nil {
++		return nil, errors.New("email already registered")
++	}
++
++	user := &User{
++		Name:     name,
++		Email:    email,
++		Password: password,
++	}
++
++	if err := s.repo.Create(ctx, user); err != nil {
++		log.Printf("failed to create user: %v", err)
++		return nil, fmt.Errorf("creating user: %w", err)
++	}
++
++	log.Printf("user registered: %s (%s)", name, email)
++	return user, nil
++}
++
++func (s *Service) Delete(ctx context.Context, id int64) error {
++	return s.repo.Delete(ctx, id)
++}

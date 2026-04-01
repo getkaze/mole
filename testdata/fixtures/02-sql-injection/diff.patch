@@ -1,0 +1,51 @@
+diff --git a/internal/store/users.go b/internal/store/users.go
+new file mode 100644
+--- /dev/null
++++ b/internal/store/users.go
+@@ -0,0 +1,45 @@
++package store
++
++import (
++	"database/sql"
++	"fmt"
++)
++
++type User struct {
++	ID    int64
++	Name  string
++	Email string
++	Role  string
++}
++
++func (s *MySQL) FindUserByEmail(email string) (*User, error) {
++	query := fmt.Sprintf("SELECT id, name, email, role FROM users WHERE email = '%s'", email)
++	row := s.db.QueryRow(query)
++
++	var u User
++	if err := row.Scan(&u.ID, &u.Name, &u.Email, &u.Role); err != nil {
++		if err == sql.ErrNoRows {
++			return nil, nil
++		}
++		return nil, err
++	}
++	return &u, nil
++}
++
++func (s *MySQL) SearchUsers(name string) ([]User, error) {
++	query := "SELECT id, name, email, role FROM users WHERE name LIKE '%" + name + "%'"
++	rows, err := s.db.Query(query)
++	if err != nil {
++		return nil, err
++	}
++	defer rows.Close()
++
++	var users []User
++	for rows.Next() {
++		var u User
++		if err := rows.Scan(&u.ID, &u.Name, &u.Email, &u.Role); err != nil {
++			return nil, err
++		}
++		users = append(users, u)
++	}
++	return users, nil
++}

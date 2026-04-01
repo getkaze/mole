@@ -9,7 +9,7 @@ RUN CGO_ENABLED=0 go build \
     -o /mole ./cmd/mole
 
 FROM alpine:3.21
-RUN apk add --no-cache ca-certificates tzdata
+RUN apk add --no-cache ca-certificates tzdata git
 COPY --from=build /mole /usr/local/bin/mole
 ENTRYPOINT ["mole"]
 CMD ["serve", "--config", "/etc/mole/mole.yaml"]

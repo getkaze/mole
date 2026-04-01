@@ -1,0 +1,58 @@
+diff --git a/internal/middleware/ratelimit.go b/internal/middleware/ratelimit.go
+new file mode 100644
+--- /dev/null
++++ b/internal/middleware/ratelimit.go
+@@ -0,0 +1,52 @@
++package middleware
++
++import (
++	"net/http"
++	"sync"
++	"time"
++)
++
++var (
++	visitors = make(map[string]*visitor)
++	mu       sync.Mutex
++)
++
++type visitor struct {
++	lastSeen time.Time
++	count    int
++}
++
++func RateLimit(limit int, window time.Duration) func(http.Handler) http.Handler {
++	return func(next http.Handler) http.Handler {
++		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
++			ip := r.RemoteAddr
++
++			mu.Lock()
++			v, exists := visitors[ip]
++			if !exists {
++				visitors[ip] = &visitor{lastSeen: time.Now(), count: 1}
++				mu.Unlock()
++				next.ServeHTTP(w, r)
++				return
++			}
++
++			if time.Since(v.lastSeen) > window {
++				v.count = 1
++				v.lastSeen = time.Now()
++				mu.Unlock()
++				next.ServeHTTP(w, r)
++				return
++			}
++
++			v.count++
++			if v.count > limit {
++				mu.Unlock()
++				http.Error(w, "rate limit exceeded", http.StatusTooManyRequests)
++				return
++			}
++
++			v.lastSeen = time.Now()
++			mu.Unlock()
++			next.ServeHTTP(w, r)
++		})
++	}
++}

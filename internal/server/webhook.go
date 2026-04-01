@@ -152,6 +152,8 @@ func (h *WebhookHandler) handleIssueComment(ctx context.Context, payload []byte,
 
 	var jobType string
 	switch {
+	case body == "/mole dig":
+		jobType = "dig"
 	case body == "/mole deep-review":
 		jobType = "deep"
 	case body == "/mole review":

@@ -1,0 +1,79 @@
+diff --git a/internal/payment/handler.go b/internal/payment/handler.go
+new file mode 100644
+--- /dev/null
++++ b/internal/payment/handler.go
+@@ -0,0 +1,68 @@
++package payment
++
++import (
++	"encoding/json"
++	"fmt"
++	"log"
++	"net/http"
++	"strconv"
++)
++
++type ChargeRequest struct {
++	UserID    int64   `json:"user_id"`
++	Amount    float64 `json:"amount"`
++	Currency  string  `json:"currency"`
++	CardToken string  `json:"card_token"`
++}
++
++type Handler struct {
++	gateway PaymentGateway
++}
++
++func (h *Handler) Charge(w http.ResponseWriter, r *http.Request) {
++	var req ChargeRequest
++	json.NewDecoder(r.Body).Decode(&req)
++
++	if req.Amount <= 0 {
++		http.Error(w, "invalid amount", http.StatusBadRequest)
++		return
++	}
++
++	log.Printf("charging user %d: %.2f %s (card: %s)", req.UserID, req.Amount, req.Currency, req.CardToken)
++
++	result, err := h.gateway.Charge(req.CardToken, req.Amount, req.Currency)
++	if err != nil {
++		log.Printf("payment failed for user %d: %v", req.UserID, err)
++		http.Error(w, "payment failed", http.StatusInternalServerError)
++		return
++	}
++
++	w.Header().Set("Content-Type", "application/json")
++	json.NewEncoder(w).Encode(result)
++}
++
++func (h *Handler) Refund(w http.ResponseWriter, r *http.Request) {
++	txID := r.URL.Query().Get("transaction_id")
++	amountStr := r.URL.Query().Get("amount")
++
++	amount, _ := strconv.ParseFloat(amountStr, 64)
++
++	result, err := h.gateway.Refund(txID, amount)
++	if err != nil {
++		http.Error(w, fmt.Sprintf("refund failed: %v", err), http.StatusInternalServerError)
++		return
++	}
++
++	json.NewEncoder(w).Encode(result)
++}
++
++func (h *Handler) Webhook(w http.ResponseWriter, r *http.Request) {
++	var event map[string]interface{}
++	json.NewDecoder(r.Body).Decode(&event)
++
++	eventType, _ := event["type"].(string)
++	log.Printf("payment webhook: %s", eventType)
++
++	switch eventType {
++	case "charge.succeeded":
++		log.Println("charge succeeded")
++	case "charge.failed":
++		log.Println("charge failed")
++	}
++
++	w.WriteHeader(http.StatusOK)
++}

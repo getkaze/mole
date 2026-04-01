@@ -1,0 +1,76 @@
+diff --git a/internal/cache/cache.go b/internal/cache/cache.go
+new file mode 100644
+--- /dev/null
++++ b/internal/cache/cache.go
+@@ -0,0 +1,62 @@
++package cache
++
++import (
++	"sync"
++	"time"
++)
++
++type entry struct {
++	value     interface{}
++	expiresAt time.Time
++}
++
++type Cache struct {
++	data map[string]entry
++	mu   sync.Mutex
++}
++
++func New() *Cache {
++	c := &Cache{
++		data: make(map[string]entry),
++	}
++	go c.cleanup()
++	return c
++}
++
++func (c *Cache) Set(key string, value interface{}, ttl time.Duration) {
++	c.mu.Lock()
++	c.data[key] = entry{
++		value:     value,
++		expiresAt: time.Now().Add(ttl),
++	}
++	c.mu.Unlock()
++}
++
++func (c *Cache) Get(key string) (interface{}, bool) {
++	c.mu.Lock()
++	e, ok := c.data[key]
++	c.mu.Unlock()
++
++	if !ok {
++		return nil, false
++	}
++
++	if time.Now().After(e.expiresAt) {
++		c.mu.Lock()
++		delete(c.data, key)
++		c.mu.Unlock()
++		return nil, false
++	}
++
++	return e.value, true
++}
++
++func (c *Cache) Delete(key string) {
++	c.mu.Lock()
++	delete(c.data, key)
++	c.mu.Unlock()
++}
++
++func (c *Cache) cleanup() {
++	for {
++		time.Sleep(5 * time.Minute)
++		c.mu.Lock()
++		for k, e := range c.data {
++			if time.Now().After(e.expiresAt) {
++				delete(c.data, k)
++			}
++		}
++		c.mu.Unlock()
++	}
++}

@@ -21,10 +21,9 @@ func TestCalculate_Mixed(t *testing.T) {
 		{Severity: "attention"},
 		{Severity: "attention"},
 		{Severity: "attention"},
-		{Severity: "suggestion"},
 	}
-	// 100 - 30 - 15 - 1 = 54
-	want := 54
+	// 100 - 16 - 15 = 69
+	want := 69
 	if got := Calculate(comments); got != want {
 		t.Errorf("Calculate() = %d, want %d", got, want)
 	}
@@ -47,13 +46,13 @@ func TestCalculate_UnknownSeverity(t *testing.T) {
 	}
 }
 
-func TestCalculate_OnlySuggestions(t *testing.T) {
+func TestCalculate_OnlyAttention(t *testing.T) {
 	comments := []Comment{
-		{Severity: "suggestion"},
-		{Severity: "suggestion"},
-		{Severity: "suggestion"},
+		{Severity: "attention"},
+		{Severity: "attention"},
+		{Severity: "attention"},
 	}
-	if got := Calculate(comments); got != 97 {
-		t.Errorf("3 suggestions = %d, want 97", got)
+	if got := Calculate(comments); got != 85 {
+		t.Errorf("3 attention = %d, want 85", got)
 	}
 }

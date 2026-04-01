@@ -77,10 +77,8 @@ func (e *Engine) IssuePrefix(severity string) string {
 			return t.moleCritical
 		case "attention":
 			return t.moleAttention
-		case "suggestion":
-			return t.moleSuggestion
 		default:
-			return t.moleSuggestion
+			return t.moleAttention
 		}
 	case ModeFormal:
 		switch severity {
@@ -88,10 +86,8 @@ func (e *Engine) IssuePrefix(severity string) string {
 			return t.formalCriticalPrefix
 		case "attention":
 			return t.formalAttentionPrefix
-		case "suggestion":
-			return t.formalSuggestionPrefix
 		default:
-			return t.formalSuggestionPrefix
+			return t.formalAttentionPrefix
 		}
 	case ModeMinimal:
 		return ""
@@ -130,10 +126,8 @@ func (e *Engine) SeverityBadge(severity string) string {
 			return "🔴"
 		case "attention":
 			return "🟡"
-		case "suggestion":
-			return "🟢"
 		default:
-			return "🟢"
+			return "🟡"
 		}
 	case ModeMinimal:
 		switch severity {
@@ -141,10 +135,8 @@ func (e *Engine) SeverityBadge(severity string) string {
 			return "[C]"
 		case "attention":
 			return "[A]"
-		case "suggestion":
-			return "[S]"
 		default:
-			return "[S]"
+			return "[A]"
 		}
 	default:
 		return ""
@@ -159,14 +151,27 @@ func (e *Engine) SeverityLabel(severity string) string {
 		return t.labelCritical
 	case "attention":
 		return t.labelAttention
-	case "suggestion":
-		return t.labelSuggestion
 	default:
-		return t.labelSuggestion
+		return t.labelAttention
 	}
 }
 
 // ReviewHeader returns the review header text.
 func (e *Engine) ReviewHeader() string {
 	return e.texts().reviewHeader
+}
+
+// ExploreCloning returns the message posted when cloning a repo for the first time.
+func (e *Engine) ExploreCloning() string {
+	return e.texts().exploreCloning
+}
+
+// ExploreCloned returns the message posted after a successful clone.
+func (e *Engine) ExploreCloned() string {
+	return e.texts().exploreCloned
+}
+
+// ExploreCloneFail returns the message posted when clone/prepare fails.
+func (e *Engine) ExploreCloneFail() string {
+	return e.texts().exploreCloneFail
 }

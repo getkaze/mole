@@ -9,8 +9,17 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Developer Experience
+
+- **GitHub Gateway interface** — abstract all GitHub API calls behind a `Gateway` interface with `RemoteGateway` (production) and `LocalGateway` (fixtures from disk), enabling development and testing without a GitHub App (@mateusmetzker)
+- **Local review mode** — `mole review --local <dir>` reads PR data from fixture files, calls Claude, and prints the formatted review to stdout + `output.md`, no GitHub needed (@mateusmetzker)
+- **Development mode** — `server.environment: development` bypasses GitHub OAuth on the dashboard login, showing role-based test logins (Admin, Dev, Tech Lead, Manager) with a fixed `testuser` account (@mateusmetzker)
+- **Test fixtures** — 12 sample PRs across 3 repos and 5 developers with intentional issues (SQL injection, XSS, credential leaks, etc.) for local review testing (@mateusmetzker)
+
 ### Dashboard
 
+- **Kaze design system** — replace amber/Recursive palette with neutral Inter-based design system matching the Kaze landing page: new color tokens, layered shadows, glassmorphism topbar, blue brand color for data viz, and refined component spacing (@mateusmetzker)
+- **Remove Architect role** — consolidate access roles to Dev, Tech Lead, Manager, Admin (@mateusmetzker)
 - **Module cards** — show aggregated metrics (summed issues/debt, averaged health) instead of duplicating per weekly period (@mateusmetzker)
 - **Module detail** — weekly evolution chart and breakdown table when clicking a module card (@mateusmetzker)
 - **Module card overflow** — long module names now truncate with ellipsis instead of breaking the card layout (@mateusmetzker)
@@ -25,9 +34,13 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### PR Review
 
+- **`/mole dig` command** — contextual review that clones the repo locally, creates a git worktree per PR, explores the codebase with Claude Haiku (multi-turn tool use: `get_file`, `search_code`, `list_dir`), then reviews with Opus using the collected context. Configurable via `repos.base_path` and `exploration.*` in `mole.yaml`. Falls back to diff-only if git is unavailable or clone fails. Clone status is posted as a PR comment in the configured language and personality (@mateusmetzker)
+- **Remove suggestion severity** — drop the 🟢 suggestion level entirely; reviews now only report Critical (🔴) and Attention (🟡) issues, eliminating generic low-value noise and contradictory findings between reviews (@mateusmetzker)
+- **Remove general suggestions** — remove the "Suggestions" section from PR review body; only line-specific issues remain (@mateusmetzker)
+- **Rebalance score weights** — critical penalty reduced from 15 to 8 points; attention stays at 5 (@mateusmetzker)
 - **Deep review on PR open** — first review when a PR is opened now uses deep review (Claude Opus) instead of standard (@mateusmetzker)
-- **Localized LLM output** — review content (issues, suggestions, summary) is now written in the configured language, not just the personality chrome (@mateusmetzker)
-- **pt-BR accent fix** — severity labels and personality texts now use proper Portuguese diacritics (Crítico, Atenção, Sugestão) (@mateusmetzker)
+- **Localized LLM output** — review content (issues, summary) is now written in the configured language, not just the personality chrome (@mateusmetzker)
+- **pt-BR accent fix** — severity labels and personality texts now use proper Portuguese diacritics (Crítico, Atenção) (@mateusmetzker)
 
 ## [0.1.0] — 2026-03-29
 

@@ -33,6 +33,10 @@ valkey:
 
 server:
   port: 8080
+  # development | production (default: production)
+  # In development mode, the dashboard login bypasses GitHub OAuth
+  # and provides role-based test logins (admin, dev, tech_lead, manager).
+  environment: production
 
 worker:
   # Number of concurrent review workers
@@ -49,6 +53,16 @@ defaults:
   language: en
   # Personality mode: mole (playful), formal (professional), minimal (terse)
   personality: mole
+
+# Codebase exploration (optional — requires git on the host)
+# When configured, Mole clones repos locally and uses Haiku to explore
+# the codebase before review, providing richer context to the reviewer.
+# repos:
+#   base_path: "/var/lib/mole/repos"
+#
+# exploration:
+#   max_turns: 25                        # max Haiku tool use turns (default: 25)
+#   model: "claude-haiku-4-5-20251001"   # exploration model (default: claude-haiku-4-5-20251001)
 
 # Dashboard
 dashboard:

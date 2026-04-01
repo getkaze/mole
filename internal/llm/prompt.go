@@ -27,7 +27,7 @@ Look for:
 - CSRF/SSRF: missing token validation, unrestricted internal network requests
 
 Subcategories: SQL Injection | XSS | Auth Bypass | Secrets Exposure | Insecure Dependencies | CSRF | Data Exposure
-Severity guide: injection/auth bypass/secrets = critical; insecure deps/CSRF = attention; minor exposure = suggestion
+Severity guide: injection/auth bypass/secrets = critical; insecure deps/CSRF = attention
 
 ---
 
@@ -45,7 +45,7 @@ Look for:
 - Boundary violations: index out of range, integer overflow, slice capacity assumptions
 
 Subcategories: Null/Nil Reference | Race Condition | Unhandled Error | Resource Leak | Logic Error
-Severity guide: race conditions/nil deref in hot path = critical; unhandled errors/leaks = attention; minor logic issues = suggestion
+Severity guide: race conditions/nil deref in hot path = critical; unhandled errors/leaks = attention
 
 ---
 
@@ -62,7 +62,7 @@ Look for:
 - API breaking changes: removed/renamed public fields, changed response shapes, removed endpoints without deprecation
 
 Subcategories: Layer Violation | Circular Dependency | Tight Coupling | God Class | API Breaking Change
-Severity guide: API breaking changes = critical; layer violations/circular deps = attention; coupling/SRP = suggestion
+Severity guide: API breaking changes = critical; layer violations/circular deps = attention
 
 ---
 
@@ -80,7 +80,7 @@ Look for:
 - Memory allocation: large allocations in loops, string concatenation in hot paths, unbounded slice growth
 
 Subcategories: N+1 Query | Unbounded Query | Missing Cache | Blocking I/O in Hot Path
-Severity guide: N+1/unbounded in production paths = critical; missing cache/blocking I/O = attention; minor inefficiency = suggestion
+Severity guide: N+1/unbounded in production paths = critical; missing cache/blocking I/O = attention
 
 ---
 
@@ -92,15 +92,12 @@ Consider whether a new developer joining the team would understand this code, an
 Look for:
 - Cyclomatic complexity: deeply nested conditionals, long switch statements, functions with too many branches
 - Duplication: copy-pasted logic that should be extracted, repeated patterns across files
-- Poor naming: ambiguous variable/function names, misleading identifiers, inconsistent naming conventions
 - Dead code: unreachable branches, unused parameters, commented-out code left behind
 - Deep nesting: excessive indentation, guard clauses that should be early returns
-- Convention violations: inconsistent formatting, deviation from project patterns (use Project Context if provided)
 - Missing tests: new public functions/methods without corresponding test coverage
-- Missing documentation: exported APIs without doc comments, complex logic without explanation
 
-Subcategories: Cyclomatic Complexity | Duplication | Poor Naming | Dead Code | Deep Nesting | Convention Violation | Missing Documentation | Missing Tests
-Severity guide: missing tests for critical paths = attention; naming/style = suggestion; dead code = suggestion
+Subcategories: Cyclomatic Complexity | Duplication | Dead Code | Deep Nesting | Missing Tests
+Severity guide: missing tests for critical paths = attention; cyclomatic complexity/duplication = attention
 
 ---
 
@@ -115,15 +112,16 @@ For each issue found, include it in the "comments" array with:
 - line: the exact line number shown at the start of the addition line (e.g. if the line reads "42: +code", use 42). NEVER use a line number from a context line or deletion line.
 - category: one of Security | Bugs | Smells | Architecture | Performance | Style
 - subcategory: must match one of the valid subcategories defined in the agent above
-- severity: critical | attention | suggestion
+- severity: critical | attention
 - message: concise explanation of the issue and how to fix it
+
+IMPORTANT: Only use severity "critical" or "attention". Do NOT report minor issues, style nits, naming preferences, or suggestions. If an issue is not clearly a bug, vulnerability, or architectural problem, do not report it.
 
 Also provide:
 - summary: a brief description of what the PR does and overall assessment
-- suggestions: general improvement suggestions (not line-specific)
 
 Respond in JSON format only. No markdown wrapping. Example:
-{"summary":"...","comments":[{"file":"...","line":1,"category":"Security","subcategory":"SQL Injection","severity":"critical","message":"..."}],"suggestions":["..."],"diagrams":[]}`
+{"summary":"...","comments":[{"file":"...","line":1,"category":"Security","subcategory":"SQL Injection","severity":"critical","message":"..."}],"diagrams":[]}`
 
 const deepSystemPrompt = `You are Mole, an AI code reviewer performing a deep review, composed of specialized review agents. You dig deep into code to find bugs, vulnerabilities, architectural issues, and opportunities for improvement.
 
@@ -152,7 +150,7 @@ Deep analysis — go beyond pattern matching:
 - Check error handling: do error messages or stack traces leak internal details to the client?
 
 Subcategories: SQL Injection | XSS | Auth Bypass | Secrets Exposure | Insecure Dependencies | CSRF | Data Exposure
-Severity guide: injection/auth bypass/secrets = critical; insecure deps/CSRF = attention; minor exposure = suggestion
+Severity guide: injection/auth bypass/secrets = critical; insecure deps/CSRF = attention
 
 ---
 
@@ -176,7 +174,7 @@ Deep analysis — reason about runtime state:
 - Evaluate error propagation: does the error carry enough context for debugging? Does it reach the right layer (user vs log vs metric)?
 
 Subcategories: Null/Nil Reference | Race Condition | Unhandled Error | Resource Leak | Logic Error
-Severity guide: race conditions/nil deref in hot path = critical; unhandled errors/leaks = attention; minor logic issues = suggestion
+Severity guide: race conditions/nil deref in hot path = critical; unhandled errors/leaks = attention
 
 ---
 
@@ -199,7 +197,7 @@ Deep analysis — evaluate design decisions:
 - Consider testability: can this code be tested in isolation? Are dependencies injectable? Would a test require complex setup or real infrastructure?
 
 Subcategories: Layer Violation | Circular Dependency | Tight Coupling | God Class | API Breaking Change
-Severity guide: API breaking changes = critical; layer violations/circular deps = attention; coupling/SRP = suggestion
+Severity guide: API breaking changes = critical; layer violations/circular deps = attention
 
 ---
 
@@ -223,7 +221,7 @@ Deep analysis — reason about system-level performance:
 - Check resource lifecycle: are connections returned to pools promptly? Are large allocations freed after use or held in long-lived references?
 
 Subcategories: N+1 Query | Unbounded Query | Missing Cache | Blocking I/O in Hot Path
-Severity guide: N+1/unbounded in production paths = critical; missing cache/blocking I/O = attention; minor inefficiency = suggestion
+Severity guide: N+1/unbounded in production paths = critical; missing cache/blocking I/O = attention
 
 ---
 
@@ -235,21 +233,16 @@ Consider whether a new developer joining the team would understand this code, wh
 Look for:
 - Cyclomatic complexity: deeply nested conditionals, long switch statements, functions with too many branches
 - Duplication: copy-pasted logic that should be extracted, repeated patterns across files
-- Poor naming: ambiguous variable/function names, misleading identifiers, inconsistent naming conventions
 - Dead code: unreachable branches, unused parameters, commented-out code left behind
 - Deep nesting: excessive indentation, guard clauses that should be early returns
-- Convention violations: inconsistent formatting, deviation from project patterns (use Project Context if provided)
 - Missing tests: new public functions/methods without corresponding test coverage
-- Missing documentation: exported APIs without doc comments, complex logic without explanation
 
 Deep analysis — evaluate cognitive load and long-term health:
 - Assess cognitive complexity: beyond cyclomatic complexity, how many things must a reader hold in their head to understand this function? Are there hidden control flows (callbacks, goroutines, deferred operations)?
-- Evaluate API ergonomics: for new public APIs, is the interface intuitive? Are error cases discoverable? Could a caller misuse it easily?
-- Check naming precision: do names accurately describe behavior including edge cases? A function named "GetUser" that also creates a user on cache miss is misleading.
 - Consider test strategy: are the right things being tested? Unit tests for pure logic, integration tests for I/O boundaries? Or is it testing implementation details that will break on refactor?
 
-Subcategories: Cyclomatic Complexity | Duplication | Poor Naming | Dead Code | Deep Nesting | Convention Violation | Missing Documentation | Missing Tests
-Severity guide: missing tests for critical paths = attention; naming/style = suggestion; dead code = suggestion
+Subcategories: Cyclomatic Complexity | Duplication | Dead Code | Deep Nesting | Missing Tests
+Severity guide: missing tests for critical paths = attention; cyclomatic complexity/duplication = attention
 
 ---
 
@@ -264,16 +257,17 @@ For each issue found, include it in the "comments" array with:
 - line: the exact line number shown at the start of the addition line (e.g. if the line reads "42: +code", use 42). NEVER use a line number from a context line or deletion line.
 - category: one of Security | Bugs | Smells | Architecture | Performance | Style
 - subcategory: must match one of the valid subcategories defined in the agent above
-- severity: critical | attention | suggestion
+- severity: critical | attention
 - message: concise explanation of the issue and how to fix it
+
+IMPORTANT: Only use severity "critical" or "attention". Do NOT report minor issues, style nits, naming preferences, or suggestions. If an issue is not clearly a bug, vulnerability, or architectural problem, do not report it.
 
 Also provide:
 - summary: a brief description of what the PR does and overall assessment
-- suggestions: general improvement suggestions (not line-specific)
 - diagrams: Mermaid sequence or class diagrams if the changes involve component interactions or structural changes. Each diagram should be a complete Mermaid code block starting with the diagram type (sequenceDiagram, classDiagram, etc.)
 
 Respond in JSON format only. No markdown wrapping. Example:
-{"summary":"...","comments":[{"file":"...","line":1,"category":"Security","subcategory":"SQL Injection","severity":"critical","message":"..."}],"suggestions":["..."],"diagrams":["sequenceDiagram\n    A->>B: call"]}`
+{"summary":"...","comments":[{"file":"...","line":1,"category":"Security","subcategory":"SQL Injection","severity":"critical","message":"..."}],"diagrams":["sequenceDiagram\n    A->>B: call"]}`
 
 func BuildPrompt(diffs []FileDiff, projectContext string, instructions string, previousIssues string, language string, deep bool) (system string, user string) {
 	if deep {
@@ -283,7 +277,7 @@ func BuildPrompt(diffs []FileDiff, projectContext string, instructions string, p
 	}
 
 	if language != "" && language != "en" {
-		system += fmt.Sprintf("\n\nIMPORTANT: Write ALL review output (summary, comments, suggestions, diagrams) in %s. The JSON field names must remain in English, but all human-readable text values must be in %s.", languageName(language), languageName(language))
+		system += fmt.Sprintf("\n\nIMPORTANT: Write ALL review output (summary, comments, diagrams) in %s. The JSON field names must remain in English, but all human-readable text values must be in %s.", languageName(language), languageName(language))
 	}
 
 	var b strings.Builder

@@ -8,35 +8,20 @@ import (
 
 func TestFilterComments_MinSeverity(t *testing.T) {
 	comments := []llm.InlineComment{
-		{File: "a.go", Severity: "suggestion", Message: "nit"},
-		{File: "b.go", Severity: "attention", Message: "warn"},
-		{File: "c.go", Severity: "critical", Message: "bad"},
-		{File: "d.go", Severity: "suggestion", Message: "nit2"},
-		{File: "e.go", Severity: "suggestion", Message: "nit3"},
-	}
-
-	result := FilterComments(comments, "attention", nil, 0)
-	if len(result) != 2 {
-		t.Errorf("got %d comments, want 2 (attention + critical)", len(result))
-	}
-}
-
-func TestFilterComments_MinSeverityCritical(t *testing.T) {
-	comments := []llm.InlineComment{
-		{File: "a.go", Severity: "suggestion"},
-		{File: "b.go", Severity: "attention"},
-		{File: "c.go", Severity: "critical"},
+		{File: "a.go", Severity: "attention", Message: "warn"},
+		{File: "b.go", Severity: "critical", Message: "bad"},
+		{File: "c.go", Severity: "attention", Message: "warn2"},
 	}
 
 	result := FilterComments(comments, "critical", nil, 0)
 	if len(result) != 1 {
-		t.Errorf("got %d, want 1 (critical only)", len(result))
+		t.Errorf("got %d comments, want 1 (critical only)", len(result))
 	}
 }
 
 func TestFilterComments_NoFilter(t *testing.T) {
 	comments := []llm.InlineComment{
-		{File: "a.go", Severity: "suggestion"},
+		{File: "a.go", Severity: "critical"},
 		{File: "b.go", Severity: "attention"},
 	}
 	result := FilterComments(comments, "", nil, 0)
@@ -47,11 +32,11 @@ func TestFilterComments_NoFilter(t *testing.T) {
 
 func TestFilterComments_MaxComments(t *testing.T) {
 	comments := []llm.InlineComment{
-		{File: "a.go", Severity: "suggestion", Message: "1"},
+		{File: "a.go", Severity: "attention", Message: "1"},
 		{File: "b.go", Severity: "critical", Message: "2"},
 		{File: "c.go", Severity: "attention", Message: "3"},
 		{File: "d.go", Severity: "critical", Message: "4"},
-		{File: "e.go", Severity: "suggestion", Message: "5"},
+		{File: "e.go", Severity: "attention", Message: "5"},
 	}
 
 	result := FilterComments(comments, "", nil, 3)
@@ -85,15 +70,15 @@ func TestFilterComments_IgnorePatterns(t *testing.T) {
 
 func TestFilterComments_CombinedFilters(t *testing.T) {
 	comments := []llm.InlineComment{
-		{File: "a.go", Severity: "suggestion"},
+		{File: "a.go", Severity: "attention"},
 		{File: "b_test.go", Severity: "critical"},
 		{File: "c.go", Severity: "critical"},
-		{File: "d.go", Severity: "attention"},
+		{File: "d.go", Severity: "critical"},
 		{File: "e.go", Severity: "attention"},
 	}
 
-	// min_severity=attention, ignore test files, max 2
-	result := FilterComments(comments, "attention", []string{"*_test.go"}, 2)
+	// ignore test files, max 2
+	result := FilterComments(comments, "", []string{"*_test.go"}, 2)
 	if len(result) != 2 {
 		t.Fatalf("got %d, want 2", len(result))
 	}

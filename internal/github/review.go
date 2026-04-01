@@ -67,9 +67,12 @@ func PostReview(ctx context.Context, client *gh.Client, owner, repo string, prNu
 
 // PRInfo holds metadata about a pull request.
 type PRInfo struct {
-	HeadSHA string
-	BaseRef string
-	Author  string
+	HeadSHA  string `json:"head_sha"`
+	HeadRef  string `json:"head_ref"`
+	BaseRef  string `json:"base_ref"`
+	Author   string `json:"author"`
+	Repo     string `json:"repo,omitempty"`      // optional, used by local fixtures
+	PRNumber int    `json:"pr_number,omitempty"` // optional, used by local fixtures
 }
 
 func GetPRInfo(ctx context.Context, client *gh.Client, owner, repo string, prNumber int) (*PRInfo, error) {
@@ -79,6 +82,7 @@ func GetPRInfo(ctx context.Context, client *gh.Client, owner, repo string, prNum
 	}
 	return &PRInfo{
 		HeadSHA: pr.GetHead().GetSHA(),
+		HeadRef: pr.GetHead().GetRef(),
 		BaseRef: pr.GetBase().GetRef(),
 		Author:  pr.GetUser().GetLogin(),
 	}, nil
