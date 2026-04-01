@@ -35,6 +35,8 @@
             /* section labels */
             'section.overview':      'overview',
             'section.period':        'period',
+            'section.commands':      'commands',
+            'section.feedback':      'feedback',
             'section.files':         'Files',
 
             /* stat labels */
@@ -135,9 +137,13 @@
             'docs.deep_review.title':         'Deep review',
             'docs.deep_review.subtitle':      'full review with diagrams',
             'docs.deep_review.description':   'Runs the deep Mole review for the current pull request, including diagrams.',
+            'docs.dig.title':                 'Dig review',
+            'docs.dig.subtitle':              'contextual review with repository exploration',
+            'docs.dig.description':           'Clones the repository, explores the code with Sonnet (tool use), and reviews with Opus using the gathered context.',
             'docs.ignore.title':              'Ignore pull request',
             'docs.ignore.subtitle':           'skip future Mole reviews on this PR',
             'docs.ignore.description':        'Stops Mole from reviewing this pull request again in the future.',
+            'docs.badge.experimental':        'experimental',
             'docs.reactions.title':           'Reactions',
             'docs.reactions.subtitle':        'validate inline review comments',
             'docs.reactions.description':     'React to Mole inline comments to confirm issues or mark false positives.',
@@ -194,6 +200,8 @@
             /* section labels */
             'section.overview':      'visão geral',
             'section.period':        'período',
+            'section.commands':      'comandos',
+            'section.feedback':      'feedback',
             'section.files':         'Arquivos',
 
             /* stat labels */
@@ -294,9 +302,13 @@
             'docs.deep_review.title':         'Deep review',
             'docs.deep_review.subtitle':      'review completo com diagramas',
             'docs.deep_review.description':   'Executa o deep review do Mole para o pull request atual, incluindo diagramas.',
+            'docs.dig.title':                 'Dig review',
+            'docs.dig.subtitle':              'review contextual com exploração do repositório',
+            'docs.dig.description':           'Clona o repositório, explora o código com Sonnet (tool use), e revisa com Opus usando o contexto coletado.',
             'docs.ignore.title':              'Ignorar pull request',
             'docs.ignore.subtitle':           'pula reviews futuros do Mole neste PR',
             'docs.ignore.description':        'Impede que o Mole revise este pull request novamente no futuro.',
+            'docs.badge.experimental':        'experimental',
             'docs.reactions.title':           'Reações',
             'docs.reactions.subtitle':        'validam comentários inline de review',
             'docs.reactions.description':     'Reaja aos comentários inline do Mole para confirmar issues ou marcar falsos positivos.',

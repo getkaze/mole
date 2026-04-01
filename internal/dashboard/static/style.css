@@ -420,6 +420,13 @@ button { cursor: pointer; font-family: inherit; font-size: inherit; }
     margin-bottom: 16px;
 }
 
+.docs-title-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
 .docs-command {
     display: inline-flex;
     align-items: center;
