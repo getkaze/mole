@@ -206,6 +206,13 @@ GitHub webhook ──> POST /webhook ──> Valkey queue ──> Worker pool
                                                       └── Aggregator computes metrics (hourly)
 ```
 
+### Static Analysis (AST)
+
+During `dig` reviews, Mole runs two deterministic static analysis passes using Go's `go/ast` parser (no LLM calls):
+
+- **Architecture validation** — parses import declarations to enforce layer dependency rules (e.g. `handler` must not import `store` directly). Violations are reported as inline comments on the PR.
+- **Security scanner** — walks the full syntax tree looking for dangerous patterns: SQL queries built with string concatenation, `exec.Command` with variable arguments, and hardcoded secrets (API keys, tokens). Detected issues are flagged as critical inline comments.
+
 ---
 
 ## Context Files

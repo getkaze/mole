@@ -116,9 +116,10 @@ func (s *Service) Execute(ctx context.Context, job queue.Job) error {
 		}
 	}
 
-	// Exploration stage: only runs for "dig" command
+	// Exploration + static analysis stage: only runs for "dig" command
 	dig := job.Type == "dig"
 	var explorationContext string
+	var staticResult *StaticAnalysisResult
 	if dig && s.repoManager != nil && s.explorer != nil && s.repoManager.Enabled() {
 		wtPath, firstClone, prepErr := s.repoManager.Prepare(ctx, job.Repo, prInfo.HeadRef, job.InstallID)
 		if prepErr != nil {
@@ -174,6 +175,16 @@ func (s *Service) Execute(ctx context.Context, job queue.Job) error {
 					"output_tokens", exploreResult.Usage.OutputTokens,
 				)
 			}
+
+			// Run static analysis (AST)
+			deep := job.Type == "deep" || dig
+			staticResult = RunStaticAnalysis(wtPath, repoCfg, deep)
+			slog.Info("static analysis complete",
+				"repo", job.Repo,
+				"pr", job.PRNumber,
+				"comments", len(staticResult.Comments),
+				"diagrams", len(staticResult.Diagrams),
+			)
 		}
 	} else if dig && (s.repoManager == nil || !s.repoManager.Enabled()) {
 		slog.Warn("exploration: dig requested but disabled (base_path not configured or git not available)")
@@ -214,6 +225,9 @@ func (s *Service) Execute(ctx context.Context, job queue.Job) error {
 		s.saveReview(ctx, job, model, prInfo.Author, nil, nil, nil, err)
 		return fmt.Errorf("LLM review: %w", err)
 	}
+
+	// Merge static analysis results (AST) into LLM review
+	MergeStaticAnalysis(result, staticResult)
 
 	// Validate line numbers
 	result.Comments = ValidateComments(result.Comments, llmDiffs)

@@ -36,7 +36,7 @@ Versions follow [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### PR Review
 
-- **`/mole dig` command** — contextual review that clones the repo locally, creates a git worktree per PR, explores the codebase with Claude Haiku (multi-turn tool use: `get_file`, `search_code`, `list_dir`), then reviews with Opus using the collected context. Configurable via `repos.base_path` and `exploration.*` in `mole.yaml`. Falls back to diff-only if git is unavailable or clone fails. Clone status is posted as a PR comment in the configured language and personality (@mateusmetzker)
+- **`/mole dig` command** — contextual review that clones the repo locally, creates a git worktree per PR, explores the codebase with Claude Sonnet (multi-turn tool use: `get_file`, `search_code`, `list_dir`), runs AST-based static analysis (architecture validation, security scanning, class diagrams), then reviews with Opus using the collected context. Configurable via `repos.base_path` and `exploration.*` in `mole.yaml`. Falls back to diff-only if git is unavailable or clone fails. Clone status is posted as a PR comment in the configured language and personality (@mateusmetzker)
 - **Remove suggestion severity** — drop the 🟢 suggestion level entirely; reviews now only report Critical (🔴) and Attention (🟡) issues, eliminating generic low-value noise and contradictory findings between reviews (@mateusmetzker)
 - **Remove general suggestions** — remove the "Suggestions" section from PR review body; only line-specific issues remain (@mateusmetzker)
 - **Rebalance score weights** — critical penalty reduced from 15 to 8 points; attention stays at 5 (@mateusmetzker)
