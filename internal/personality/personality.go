@@ -160,3 +160,18 @@ func (e *Engine) SeverityLabel(severity string) string {
 func (e *Engine) ReviewHeader() string {
 	return e.texts().reviewHeader
 }
+
+// ExploreCloning returns the message posted when cloning a repo for the first time.
+func (e *Engine) ExploreCloning() string {
+	return e.texts().exploreCloning
+}
+
+// ExploreCloned returns the message posted after a successful clone.
+func (e *Engine) ExploreCloned() string {
+	return e.texts().exploreCloned
+}
+
+// ExploreCloneFail returns the message posted when clone/prepare fails.
+func (e *Engine) ExploreCloneFail() string {
+	return e.texts().exploreCloneFail
+}

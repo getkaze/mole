@@ -108,6 +108,16 @@ func (l *LocalGateway) AddReaction(_ context.Context, repo string, pr int, _ int
 	slog.Debug("local: reaction skipped", "repo", repo, "pr", pr, "reaction", reaction)
 }
 
+func (l *LocalGateway) PostComment(_ context.Context, _ string, _ int, body string) (int64, error) {
+	fmt.Printf("[comment] %s\n", body)
+	return 1, nil
+}
+
+func (l *LocalGateway) EditComment(_ context.Context, _ string, _ int, _ int64, body string) error {
+	fmt.Printf("[comment updated] %s\n", body)
+	return nil
+}
+
 // parsePatch parses a unified diff (git diff output) into FileDiff entries.
 func parsePatch(raw string) []FileDiff {
 	var diffs []FileDiff

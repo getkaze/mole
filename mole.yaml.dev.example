@@ -26,3 +26,12 @@ valkey:
 
 log:
   level: debug
+
+# Codebase exploration (optional — requires git installed)
+# Uncomment to enable Haiku-powered codebase exploration before reviews.
+# repos:
+#   base_path: "/tmp/mole/repos"
+#
+# exploration:
+#   max_turns: 25
+#   model: "claude-haiku-4-5-20251001"

@@ -80,3 +80,21 @@ func (r *RemoteGateway) AddReaction(ctx context.Context, repo string, pr int, co
 	owner, name := r.split(repo)
 	AddReaction(ctx, client, owner, name, pr, commentID, reaction)
 }
+
+func (r *RemoteGateway) PostComment(ctx context.Context, repo string, pr int, body string) (int64, error) {
+	client, err := r.factory.Client(r.installID)
+	if err != nil {
+		return 0, err
+	}
+	owner, name := r.split(repo)
+	return PostComment(ctx, client, owner, name, pr, body)
+}
+
+func (r *RemoteGateway) EditComment(ctx context.Context, repo string, pr int, commentID int64, body string) error {
+	client, err := r.factory.Client(r.installID)
+	if err != nil {
+		return err
+	}
+	owner, name := r.split(repo)
+	return EditComment(ctx, client, owner, name, commentID, body)
+}

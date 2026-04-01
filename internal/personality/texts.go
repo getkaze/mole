@@ -22,6 +22,11 @@ type texts struct {
 	// Severity labels
 	labelCritical  string
 	labelAttention string
+
+	// Exploration messages
+	exploreCloning   string
+	exploreCloned    string
+	exploreCloneFail string
 }
 
 var allTexts = map[string]texts{
@@ -43,6 +48,10 @@ var allTexts = map[string]texts{
 
 		labelCritical:  "Critical",
 		labelAttention: "Attention",
+
+		exploreCloning:   "🔍 Cloning repository for the first time. This may take a moment...",
+		exploreCloned:    "🔍 Repository cloned. Exploring codebase for context...",
+		exploreCloneFail: "🔍 Failed to prepare repository for contextual review. Reviewing with diff only.",
 	},
 	"pt-BR": {
 		reviewHeader: "Mole Review",
@@ -62,6 +71,10 @@ var allTexts = map[string]texts{
 
 		labelCritical:  "Crítico",
 		labelAttention: "Atenção",
+
+		exploreCloning:   "🔍 Clonando repositório pela primeira vez. Pode levar um momento...",
+		exploreCloned:    "🔍 Repositório clonado. Explorando o código para contexto...",
+		exploreCloneFail: "🔍 Falha ao preparar repositório para revisão contextual. Revisando apenas com a diff.",
 	},
 }
 

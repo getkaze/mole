@@ -11,6 +11,8 @@ type Gateway interface {
 	LoadRepoConfig(ctx context.Context, repo, ref string) (*RepoConfig, error)
 	PostReview(ctx context.Context, repo string, pr int, sha string, data *ReviewData) (*PostReviewResult, error)
 	AddReaction(ctx context.Context, repo string, pr int, commentID int64, reaction string)
+	PostComment(ctx context.Context, repo string, pr int, body string) (int64, error)
+	EditComment(ctx context.Context, repo string, pr int, commentID int64, body string) error
 }
 
 // GatewayFactory creates a Gateway for a given GitHub App installation.

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"net/http"
 	"os"
 	"os/signal"
 	"strconv"
@@ -11,11 +12,13 @@ import (
 	"syscall"
 	"time"
 
+	ghinstall "github.com/bradleyfalzon/ghinstallation/v2"
 	"github.com/spf13/cobra"
 
 	"github.com/getkaze/mole/internal/aggregator"
 	"github.com/getkaze/mole/internal/config"
 	"github.com/getkaze/mole/internal/dashboard"
+	"github.com/getkaze/mole/internal/git"
 	ghclient "github.com/getkaze/mole/internal/github"
 	"github.com/getkaze/mole/internal/llm"
 	"github.com/getkaze/mole/internal/migrate"
@@ -101,7 +104,23 @@ func serveCmd() *cobra.Command {
 			}
 			provider := llm.NewClaude(cfg.LLM.APIKey)
 
-			svc := review.NewService(gwFactory, provider, st, cfg.LLM.ReviewModel, cfg.LLM.DeepReviewModel, cfg.Defaults.Language, cfg.Defaults.Personality)
+			// Exploration dependencies
+			var repoMgr *git.RepoManager
+			var explorer *llm.Explorer
+			if cfg.Repos.BasePath != "" {
+				tokenFunc := newTokenFunc(cfg.GitHub.AppID, cfg.GitHub.PrivateKeyPath)
+				repoMgr = git.NewRepoManager(cfg.Repos.BasePath, tokenFunc)
+				if repoMgr.IsAvailable() {
+					explorer = llm.NewExplorer(cfg.LLM.APIKey, cfg.Exploration.MaxTurns, cfg.Exploration.Model)
+					repoMgr.CleanupStale()
+					slog.Info("exploration enabled", "base_path", cfg.Repos.BasePath, "max_turns", cfg.Exploration.MaxTurns)
+				} else {
+					slog.Warn("exploration: git binary not found, exploration disabled")
+					repoMgr = nil
+				}
+			}
+
+			svc := review.NewService(gwFactory, provider, explorer, repoMgr, st, cfg.LLM.ReviewModel, cfg.LLM.DeepReviewModel, cfg.Defaults.Language, cfg.Defaults.Personality)
 
 			pool := worker.NewPool(q, svc.Execute, cfg.Worker.Count)
 
@@ -153,12 +172,19 @@ func serveCmd() *cobra.Command {
 				}
 			}()
 
-			slog.Info("mole is running",
+			startupAttrs := []any{
 				"port", cfg.Server.Port,
 				"workers", cfg.Worker.Count,
 				"review_model", cfg.LLM.ReviewModel,
 				"deep_review_model", cfg.LLM.DeepReviewModel,
-			)
+			}
+			if explorer != nil {
+				startupAttrs = append(startupAttrs,
+					"exploration_model", cfg.Exploration.Model,
+					"exploration_max_turns", cfg.Exploration.MaxTurns,
+				)
+			}
+			slog.Info("mole is running", startupAttrs...)
 
 			<-ctx.Done()
 
@@ -317,10 +343,13 @@ func reviewCmd() *cobra.Command {
 		Args:  cobra.MaximumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			deep, _ := cmd.Flags().GetBool("deep")
+			digFlag, _ := cmd.Flags().GetBool("dig")
 			localDir, _ := cmd.Flags().GetString("local")
 
 			jobType := "standard"
-			if deep {
+			if digFlag {
+				jobType = "dig"
+			} else if deep {
 				jobType = "deep"
 			}
 
@@ -341,7 +370,14 @@ func reviewCmd() *cobra.Command {
 
 				gwFactory := ghclient.NewLocalGatewayFactory(localDir)
 				provider := llm.NewClaude(cfg.LLM.APIKey)
-				svc := review.NewService(gwFactory, provider, st, cfg.LLM.ReviewModel, cfg.LLM.DeepReviewModel, cfg.Defaults.Language, cfg.Defaults.Personality)
+
+				// Local mode: exploration uses localDir as the worktree directly, no git clone needed
+				var explorer *llm.Explorer
+				if cfg.LLM.APIKey != "" {
+					explorer = llm.NewExplorer(cfg.LLM.APIKey, cfg.Exploration.MaxTurns, cfg.Exploration.Model)
+				}
+
+				svc := review.NewService(gwFactory, provider, explorer, nil, st, cfg.LLM.ReviewModel, cfg.LLM.DeepReviewModel, cfg.Defaults.Language, cfg.Defaults.Personality)
 
 				// Read repo and PR number from fixtures if available
 				gw := ghclient.NewLocalGateway(localDir)
@@ -400,7 +436,19 @@ func reviewCmd() *cobra.Command {
 			gwFactory := ghclient.NewRemoteGatewayFactory(ghFactory)
 			provider := llm.NewClaude(cfg.LLM.APIKey)
 
-			svc := review.NewService(gwFactory, provider, st, cfg.LLM.ReviewModel, cfg.LLM.DeepReviewModel, cfg.Defaults.Language, cfg.Defaults.Personality)
+			var repoMgr *git.RepoManager
+			var explorer *llm.Explorer
+			if cfg.Repos.BasePath != "" {
+				tokenFunc := newTokenFunc(cfg.GitHub.AppID, cfg.GitHub.PrivateKeyPath)
+				repoMgr = git.NewRepoManager(cfg.Repos.BasePath, tokenFunc)
+				if repoMgr.IsAvailable() {
+					explorer = llm.NewExplorer(cfg.LLM.APIKey, cfg.Exploration.MaxTurns, cfg.Exploration.Model)
+				} else {
+					repoMgr = nil
+				}
+			}
+
+			svc := review.NewService(gwFactory, provider, explorer, repoMgr, st, cfg.LLM.ReviewModel, cfg.LLM.DeepReviewModel, cfg.Defaults.Language, cfg.Defaults.Personality)
 
 			installID, _ := cmd.Flags().GetInt64("install-id")
 
@@ -422,6 +470,7 @@ func reviewCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().Bool("deep", false, "use Claude Opus for deep review")
+	cmd.Flags().Bool("dig", false, "clone repo, explore codebase with Haiku, then review with Opus")
 	cmd.Flags().String("local", "", "read PR data from local fixtures directory (no GitHub needed)")
 	cmd.Flags().Int64("install-id", 0, "GitHub App installation ID")
 	return cmd
@@ -480,6 +529,23 @@ func updateCmd() *cobra.Command {
 			fmt.Printf("  ✓ updated to %s\n", result.Latest)
 			return nil
 		},
+	}
+}
+
+// newTokenFunc creates a git.TokenFunc that generates GitHub App installation
+// tokens using the ghinstallation library.
+func newTokenFunc(appID int64, privateKeyPath string) git.TokenFunc {
+	return func(ctx context.Context, installID int64) (string, error) {
+		transport, err := ghinstall.NewKeyFromFile(
+			http.DefaultTransport,
+			appID,
+			installID,
+			privateKeyPath,
+		)
+		if err != nil {
+			return "", fmt.Errorf("creating github transport: %w", err)
+		}
+		return transport.Token(ctx)
 	}
 }
 

@@ -17,8 +17,19 @@ type Config struct {
 	Server   ServerConfig    `yaml:"server"`
 	Worker   WorkerConfig    `yaml:"worker"`
 	Log      LogConfig       `yaml:"log"`
-	Dashboard DashboardConfig `yaml:"dashboard"`
-	Defaults  DefaultsConfig  `yaml:"defaults"`
+	Dashboard   DashboardConfig   `yaml:"dashboard"`
+	Defaults    DefaultsConfig    `yaml:"defaults"`
+	Repos       ReposConfig       `yaml:"repos"`
+	Exploration ExplorationConfig `yaml:"exploration"`
+}
+
+type ReposConfig struct {
+	BasePath string `yaml:"base_path"` // where to clone repos; empty = exploration disabled
+}
+
+type ExplorationConfig struct {
+	MaxTurns int    `yaml:"max_turns"` // max Haiku tool use turns; default: 25
+	Model    string `yaml:"model"`     // exploration model; default: claude-haiku-4-5-20251001
 }
 
 type DefaultsConfig struct {
@@ -152,6 +163,12 @@ func (c *Config) applyDefaults() {
 	if c.LLM.Pricing == nil {
 		c.LLM.Pricing = DefaultPricing()
 	}
+	if c.Exploration.MaxTurns == 0 {
+		c.Exploration.MaxTurns = 25
+	}
+	if c.Exploration.Model == "" {
+		c.Exploration.Model = "claude-haiku-4-5-20251001"
+	}
 }
 
 func (c *Config) applyEnvOverrides() {
@@ -236,6 +253,17 @@ func (c *Config) applyEnvOverrides() {
 	}
 	if v := os.Getenv("MOLE_DEFAULTS_PERSONALITY"); v != "" {
 		c.Defaults.Personality = v
+	}
+	if v := os.Getenv("MOLE_REPOS_BASE_PATH"); v != "" {
+		c.Repos.BasePath = v
+	}
+	if v := os.Getenv("MOLE_EXPLORATION_MAX_TURNS"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil {
+			c.Exploration.MaxTurns = n
+		}
+	}
+	if v := os.Getenv("MOLE_EXPLORATION_MODEL"); v != "" {
+		c.Exploration.Model = v
 	}
 }
 

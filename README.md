@@ -138,6 +138,7 @@ mole init /path/to/repo
 # Review a PR from the CLI
 mole review owner/repo#123
 mole review owner/repo#123 --deep
+mole review owner/repo#123 --dig       # clone + explore + review
 mole review owner/repo#123 --install-id 12345
 
 # Review from local fixtures (no GitHub App needed)
@@ -166,6 +167,7 @@ Comment on any PR to trigger Mole:
 |---------|-------------|
 | `/mole review` | Standard review (Claude Sonnet) |
 | `/mole deep-review` | Deep review with diagrams (Claude Opus) |
+| `/mole dig` | Contextual review — clones repo, explores codebase with Haiku, reviews with Opus |
 | `/mole ignore` | Skip all future reviews for this PR |
 
 PRs are also reviewed automatically when opened.
@@ -193,6 +195,8 @@ GitHub webhook ──> POST /webhook ──> Valkey queue ──> Worker pool
                    (signature check)   (dedup)        │
                                                       ├── Fetch PR diff (GitHub API)
                                                       ├── Load .mole/ context + config
+                                                      ├── [/mole dig] Clone/fetch repo + worktree
+                                                      ├── [/mole dig] Haiku explores codebase (tools)
                                                       ├── Run architecture validation (AST)
                                                       ├── Run security scanner (AST)
                                                       ├── Call Claude API (review + taxonomy)
@@ -324,6 +328,15 @@ defaults:
   language: en                           # en, pt-BR
   personality: mole                      # mole, formal, minimal
 
+# Codebase exploration (optional — requires git on host)
+# Enables /mole dig command for contextual reviews
+repos:
+  base_path: "/var/lib/mole/repos"   # Where to clone repos (empty = disabled)
+
+exploration:
+  max_turns: 25                       # Max Haiku tool-use turns
+  model: "claude-haiku-4-5-20251001"  # Exploration model
+
 # Dashboard (optional)
 dashboard:
   github_client_id: ""
@@ -354,6 +367,9 @@ Every field can be overridden with environment variables using the `MOLE_` prefi
 | `MOLE_SERVER_ENVIRONMENT` | `server.environment` |
 | `MOLE_WORKER_COUNT` | `worker.count` |
 | `MOLE_LOG_LEVEL` | `log.level` |
+| `MOLE_REPOS_BASE_PATH` | `repos.base_path` |
+| `MOLE_EXPLORATION_MAX_TURNS` | `exploration.max_turns` |
+| `MOLE_EXPLORATION_MODEL` | `exploration.model` |
 | `MOLE_DASHBOARD_GITHUB_CLIENT_ID` | `dashboard.github_client_id` |
 | `MOLE_DASHBOARD_GITHUB_CLIENT_SECRET` | `dashboard.github_client_secret` |
 | `MOLE_DASHBOARD_SESSION_SECRET` | `dashboard.session_secret` |
