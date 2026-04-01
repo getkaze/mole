@@ -1,6 +1,6 @@
 <div align="center">
 
-  <img src="mole-header.png" alt="mole" width="1584" height="396"/>
+  <img src="mole-header.png" alt="mole" width="1280" height="640"/>
 
   **AI-powered PR reviews + developer growth. Self-hosted. One binary or one container.**
 
