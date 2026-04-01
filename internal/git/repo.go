@@ -70,7 +70,7 @@ func (rm *RepoManager) Prepare(ctx context.Context, repo string, branch string, 
 	// Remove the temp dir so git worktree add can create it
 	os.Remove(wtPath)
 
-	if err := rm.gitCmd(ctx, repoDir, "worktree", "add", wtPath, "origin/"+branch); err != nil {
+	if err := rm.gitCmd(ctx, repoDir, "worktree", "add", wtPath, branch); err != nil {
 		os.RemoveAll(wtPath)
 		return "", false, fmt.Errorf("worktree add: %w", err)
 	}
