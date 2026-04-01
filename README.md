@@ -335,7 +335,7 @@ repos:
 
 exploration:
   max_turns: 25                       # Max Haiku tool-use turns
-  model: "claude-haiku-4-5-20251001"  # Exploration model
+  model: "claude-sonnet-4-6"           # Exploration model
 
 # Dashboard (optional)
 dashboard:

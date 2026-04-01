@@ -144,7 +144,7 @@ repos:
   base_path: "/var/lib/mole/repos"
 exploration:
   max_turns: 25
-  model: "claude-haiku-4-5-20251001"
+  model: "claude-sonnet-4-6"
 ```
 
 The exploration uses non-streaming API calls (needs the full response to detect tool_use blocks before continuing).

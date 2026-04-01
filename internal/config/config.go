@@ -167,7 +167,7 @@ func (c *Config) applyDefaults() {
 		c.Exploration.MaxTurns = 25
 	}
 	if c.Exploration.Model == "" {
-		c.Exploration.Model = "claude-haiku-4-5-20251001"
+		c.Exploration.Model = "claude-sonnet-4-6"
 	}
 }
 
