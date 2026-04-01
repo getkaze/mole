@@ -1,8 +1,6 @@
 <div align="center">
 
-  <img src="mole-favicon.png" alt="mole" width="100" height="150"/>
-  
-  # mole
+  <img src="mole-header.png" alt="mole" width="1584" height="396"/>
 
   **AI-powered PR reviews + developer growth. Self-hosted. One binary or one container.**
 
