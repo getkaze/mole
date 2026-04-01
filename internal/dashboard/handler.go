@@ -16,12 +16,12 @@ type pageData struct {
 	DisplayName string
 	Page        string
 	IsAdmin     bool
-	RepoGroups []repoGroup
-	Module     moduleView
-	Developers []devOverview
-	Developer  string
-	Costs      *costsData
-	Version    string
+	RepoGroups  []repoGroup
+	Module      moduleView
+	Developers  []devOverview
+	Developer   string
+	Costs       *costsData
+	Version     string
 }
 
 type costsData struct {
@@ -36,13 +36,13 @@ type costsData struct {
 }
 
 type modelCostView struct {
-	Model       string
-	Reviews     int
-	InputTokens int64
+	Model        string
+	Reviews      int
+	InputTokens  int64
 	OutputTokens int64
-	InputCost   string
-	OutputCost  string
-	TotalCost   string
+	InputCost    string
+	OutputCost   string
+	TotalCost    string
 }
 
 type devOverview struct {
@@ -675,6 +675,11 @@ func (d *Dashboard) handleAbout(w http.ResponseWriter, r *http.Request) {
 	data := d.newPageData(r, "about")
 	data.Version = d.config.Version
 	d.renderPage(w, "about.html", data)
+}
+
+func (d *Dashboard) handleDocumentation(w http.ResponseWriter, r *http.Request) {
+	data := d.newPageData(r, "documentation")
+	d.renderPage(w, "documentation.html", data)
 }
 
 // Helpers

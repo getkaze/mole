@@ -51,7 +51,7 @@ func New(s store.Store, cfg Config) (*Dashboard, error) {
 	}
 
 	// Parse each page template with its own copy of the layout
-	pageFiles := []string{"me.html", "team.html", "modules.html", "module.html", "developers.html", "developer.html", "costs.html", "about.html"}
+	pageFiles := []string{"me.html", "team.html", "modules.html", "module.html", "developers.html", "developer.html", "costs.html", "about.html", "documentation.html"}
 	for _, page := range pageFiles {
 		tmpl, err := template.New("").Funcs(funcMap).ParseFS(templateFS,
 			"templates/layout.html",
@@ -123,6 +123,7 @@ func (d *Dashboard) RegisterRoutes(mux *http.ServeMux) {
 
 	// About
 	mux.HandleFunc("GET /about", d.requireAuth(d.handleAbout))
+	mux.HandleFunc("GET /documentation", d.requireAuth(d.handleDocumentation))
 
 	// Costs (admin only)
 	mux.HandleFunc("GET /costs", d.requireAuth(d.handleCosts))
