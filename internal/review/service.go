@@ -177,8 +177,7 @@ func (s *Service) Execute(ctx context.Context, job queue.Job) error {
 			}
 
 			// Run static analysis (AST)
-			deep := job.Type == "deep" || dig
-			staticResult = RunStaticAnalysis(wtPath, repoCfg, deep)
+			staticResult = RunStaticAnalysis(wtPath, repoCfg, true)
 			slog.Info("static analysis complete",
 				"repo", job.Repo,
 				"pr", job.PRNumber,
