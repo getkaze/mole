@@ -166,7 +166,7 @@ Comment on any PR to trigger Mole:
 |---------|-------------|
 | `/mole review` | Standard review (Claude Sonnet) |
 | `/mole deep-review` | Deep review with diagrams (Claude Opus) |
-| `/mole dig` | Contextual review — clones repo, explores codebase with Haiku, reviews with Opus |
+| `/mole dig` | Contextual review — clones repo, explores codebase with Sonnet, reviews with Opus |
 | `/mole ignore` | Skip all future reviews for this PR |
 
 PRs are also reviewed automatically when opened.
@@ -195,7 +195,7 @@ GitHub webhook ──> POST /webhook ──> Valkey queue ──> Worker pool
                                                       ├── Fetch PR diff (GitHub API)
                                                       ├── Load .mole/ context + config
                                                       ├── [/mole dig] Clone/fetch repo + worktree
-                                                      ├── [/mole dig] Haiku explores codebase (tools)
+                                                      ├── [/mole dig] Sonnet explores codebase (tools)
                                                       ├── Run architecture validation (AST)
                                                       ├── Run security scanner (AST)
                                                       ├── Call Claude API (review + taxonomy)
@@ -334,7 +334,7 @@ repos:
   base_path: "/var/lib/mole/repos"   # Where to clone repos (empty = disabled)
 
 exploration:
-  max_turns: 25                       # Max Haiku tool-use turns
+  max_turns: 25                       # Max Sonnet tool-use turns
   model: "claude-sonnet-4-6"           # Exploration model
 
 # Dashboard (optional)
