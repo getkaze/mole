@@ -124,9 +124,9 @@ git -C {base_path}/{owner}/{repo} worktree add /tmp/mole-wt-XXXXX origin/{branch
 ```
 Cleanup is deferred — the worktree directory is removed regardless of success or failure.
 
-#### Haiku Exploration (Stage 1)
+#### Exploration (Stage 1)
 
-The Explorer (`internal/llm/explorer.go`) runs a multi-turn tool use conversation with Claude Haiku:
+The Explorer (`internal/llm/explorer.go`) runs a multi-turn tool use conversation with the exploration model (default: Claude Sonnet):
 
 1. **System prompt:** embedded markdown agent instructions (`internal/llm/agents/explorer.md`) via `go:embed`
 2. **User message:** Go-generated file tree + PR diff
@@ -134,7 +134,7 @@ The Explorer (`internal/llm/explorer.go`) runs a multi-turn tool use conversatio
    - `get_file(path)` — reads a file (max 100KB, path-validated)
    - `search_code(query, file_pattern?)` — regex search across files (max 50 matches)
    - `list_dir(path)` — lists a directory's contents
-4. **Loop:** Haiku calls tools → Go executes them in the worktree → results sent back → repeat until Haiku is done or max turns reached
+4. **Loop:** The explorer calls tools → Go executes them in the worktree → results sent back → repeat until done or max turns reached
 
 All tools are sandboxed to the worktree directory via `safePath()` — resolves the absolute path, verifies it starts with the worktree root, and checks for symlink escape.
 
@@ -151,13 +151,35 @@ The exploration uses non-streaming API calls (needs the full response to detect 
 
 #### Opus/Sonnet Review (Stage 2)
 
-The collected context from Haiku is appended to the existing `.mole/` context and passed to the review model. The review call itself is unchanged — it just receives richer context.
+The collected context from the explorer is appended to the existing `.mole/` context and passed to the review model. The review call itself is unchanged — it just receives richer context.
 
 #### Graceful Fallback
 
 If anything fails (no base_path configured, git not installed, clone fails, exploration errors), the review falls back to the current diff-only behavior with a WARNING log. The pipeline never crashes due to exploration failures.
 
-### 7h. Load previous issues from the same PR (to avoid duplicates)
+### 7h. Static Analysis (AST)
+
+Runs during `dig` jobs after exploration, while the worktree is still available. Results are merged into the LLM review before validation and filtering.
+
+#### Architecture Validation (`internal/arch/arch.go`)
+
+Parses import declarations (`parser.ImportsOnly`) from each `.go` file and checks them against layer dependency rules defined in `.mole/config.yaml`. For example, a rule like `handler must not import store` catches architectural violations. Each violation becomes an inline comment on the PR.
+
+#### Security Scanner (`internal/security/scanner.go`)
+
+Walks the full syntax tree with `ast.Inspect()`, checking each node for dangerous patterns:
+
+- **SQL Injection** — `CallExpr` where the method is `Query`/`Exec`/etc. and an argument is a `BinaryExpr` with `+` (string concatenation)
+- **Command Injection** — `CallExpr` where `exec.Command` receives non-literal arguments (variables that could be user input)
+- **Hardcoded Secrets** — `BasicLit` strings starting with known prefixes (`sk-`, `AKIA`, `ghp_`, `glpat-`, `sk_live`)
+
+#### AST Class Diagrams (`internal/ast/classdiagram.go`)
+
+For deep/dig reviews, generates Mermaid class diagrams from Go structs, interfaces, and methods. Diagrams are appended to the review body.
+
+Detected issues are added as critical inline comments alongside the LLM-generated review. These checks are deterministic and run without LLM calls.
+
+### 7i. Load previous issues from the same PR (to avoid duplicates)
 ```sql
 SELECT ... FROM issues i JOIN reviews r ON r.id = i.review_id
 WHERE r.repo = ? AND r.pr_number = ? ORDER BY i.created_at
@@ -166,7 +188,7 @@ Formatted as text so the LLM knows what was already reported.
 
 ## 8. Model Selection
 
-> **Note:** Regardless of model selection below, both standard and deep reviews run the Haiku exploration stage (when enabled). The model selection only affects the final review call.
+> **Note:** Only `dig` jobs run the exploration stage — standard and deep reviews skip it. The `dig` job type also uses Opus for the final review, same as deep.
 
 ```go
 model = s.opus   // job.Type == "deep" → Claude Opus
@@ -195,7 +217,7 @@ POST https://api.anthropic.com/v1/messages (streaming)
 
 ## 10. Response Parsing
 
-Claude returns JSON with: `summary`, `comments[]`, `suggestions[]`, `diagrams[]`. The parser extracts and maps them to structs.
+Claude returns JSON with: `summary`, `comments[]`, `diagrams[]`. The parser extracts and maps them to structs.
 
 ## 11. Comment Validation
 
@@ -204,20 +226,21 @@ Claude returns JSON with: `summary`, `comments[]`, `suggestions[]`, `diagrams[]`
 ## 12. Repo Filters
 
 `FilterComments()` applies:
-- `min_severity` — e.g. if `attention`, drops all `suggestion` items
+- `min_severity` — e.g. if `critical`, drops all `attention` items
 - `ignore` patterns — e.g. `**/*_test.go`, `vendor/**`
 - `max_inline_comments` — caps with priority by severity
 
 ## 13. Score Calculation
 
 ```
-100 - (critical × 5) - (attention × 2) - (suggestion × 1)
+100 - (critical × 8) - (attention × 5)
 ```
+Only two severity levels exist: `critical` and `attention`.
 
 ## 14. Personality Formatting
 
 The formatter applies the configured personality (`mole`, `formal`, `minimal`) and generates:
-- Review body (summary + score badge + issues list + suggestions + mermaid diagrams)
+- Review body (summary + score badge + issues list + mermaid diagrams)
 - Inline comments formatted with severity emoji
 
 ## 15. Post to GitHub
@@ -290,7 +313,9 @@ Worker BRPOP mole:queue:jobs
   → Fetch PR info + diff (GitHub API)
   → Load .mole/ context + config (GitHub API)
   → [if enabled] Clone/fetch repo + create worktree
-  → [if enabled] Haiku explores codebase via tools (multi-turn)
+  → [if enabled] Explorer analyzes codebase via tools (multi-turn)
+  → Run architecture validation (AST)
+  → Run security scanner (AST)
   → Load previous issues (MySQL)
   → Build prompt (diff + .mole/ context + exploration context)
   → Call Claude for review (streaming)
@@ -325,8 +350,10 @@ Worker BRPOP mole:queue:jobs
 | Score | `internal/score/score.go` | `Calculate()` |
 | MySQL Store | `internal/store/mysql.go` | `SaveReview()`, `SaveIssues()`, `UpdateIssueCommentID()` |
 | Repo Manager | `internal/git/repo.go` | `Prepare()` — clone/fetch + worktree, `Cleanup()`, `CleanupStale()` |
-| Explorer | `internal/llm/explorer.go` | `Explore()` — Haiku multi-turn tool use loop |
+| Explorer | `internal/llm/explorer.go` | `Explore()` — Multi-turn tool use loop (default: Sonnet) |
 | Exploration Tools | `internal/llm/tools.go` | `Execute()` — get_file, search_code, list_dir (sandboxed) |
 | File Tree | `internal/llm/tree.go` | `BuildTree()` — generates directory tree for prompt |
-| Explorer Prompt | `internal/llm/agents/explorer.md` | System prompt for Haiku (embedded via go:embed) |
+| Explorer Prompt | `internal/llm/agents/explorer.md` | System prompt for explorer (embedded via go:embed) |
+| Arch Validator | `internal/arch/arch.go` | Validates layer dependency rules via import parsing |
+| Security Scanner | `internal/security/scanner.go` | `Scan()`, `scanFile()` — AST-based vulnerability detection |
 | PR Comments | `internal/github/comment.go` | `PostComment()`, `EditComment()` — clone status feedback |
